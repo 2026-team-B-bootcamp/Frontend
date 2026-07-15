@@ -1,0 +1,17 @@
+# 기능별 폴더(예: src/features/**)가 생기면 feature/* 라벨을 여기에 추가
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file: '.github/workflows/**'
+    - any-glob-to-any-file: '.github/labeler.yml'
+
+deps:
+  - changed-files:
+    - any-glob-to-any-file: 'package.json'
+    - any-glob-to-any-file: 'package-lock.json'
+
+config:
+  - changed-files:
+    - any-glob-to-any-file: 'vite.config.ts'
+    - any-glob-to-any-file: 'tsconfig*.json'
+    - any-glob-to-any-file: 'eslint.config.js'
