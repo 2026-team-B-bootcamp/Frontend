@@ -1,0 +1,91 @@
+/* 웜 오렌지+베이지 라이트 테마 — 밝은 베이지 캔버스 위 크림 타일,
+   주황(1차)·앰버(2차) 강조. 고딕(Pretendard/Inter) 타이포와
+   타일·발광 보더 구조는 다크 벤토 팩에서 승계. */
+:root {
+  --bg: #f6f1e7;
+  --surface: #fffdf8;
+  --surface-grad: linear-gradient(180deg, #fffef9 0%, #f9f4ea 100%);
+  --surface-2: #efe8d9;
+  --rail-bg: #eae2d0;
+  --text: #6f6858;
+  --text-h: #322d24;
+  --text-faint: #a89e8a;
+  --chat-text: #3f3a30;
+  --border: #e3d9c4;
+  --border-top: #ece5d3;
+  --border-bright: #cdbf9f;
+  --accent: #e8622c;
+  --accent-bg: rgba(232, 98, 44, 0.1);
+  --accent-border: rgba(232, 98, 44, 0.45);
+  --accent-text: #c14e1a;
+  --accent-2: #d9a13c;
+  --accent-2-bg: rgba(217, 161, 60, 0.16);
+  --accent-2-text: #8a6410;
+  --accent-2-border: rgba(217, 161, 60, 0.5);
+  --danger: #c04b3c;
+  --success: #5d8f57;
+  --hover: rgba(120, 95, 50, 0.06);
+  --presence-off: #d8cdb6;
+  --overlay: rgba(70, 55, 30, 0.35);
+  --focus-ring: rgba(232, 98, 44, 0.16);
+  --shadow: 0 2px 8px rgba(95, 75, 40, 0.08);
+  --shadow-hover: 0 8px 20px rgba(95, 75, 40, 0.13);
+  --glow: radial-gradient(
+    circle,
+    rgba(232, 98, 44, 0.14) 0%,
+    rgba(217, 161, 60, 0.12) 40%,
+    transparent 70%
+  );
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --sans: 'Pretendard Variable', Pretendard, Inter, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  font: 15px/1.6 var(--sans);
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--bg);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--sans);
+  color: var(--text-h);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+h1 {
+  letter-spacing: -0.03em;
+}
+
+a {
+  color: var(--accent-text);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(232, 98, 44, 0.25);
+  color: var(--text-h);
+}

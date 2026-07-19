@@ -25,3 +25,6 @@ dist-ssr
 
 # oh-my-claudecode 도구 내부 상태
 .omc/
+
+# 환경변수(민감 정보)
+.env
