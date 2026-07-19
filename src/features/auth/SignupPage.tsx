@@ -1,3 +1,5 @@
+// 회원가입 화면. 폼 제출 시 AuthContext의 signup()을 호출해서
+// authApi.signup -> apiFetch -> 백엔드 순으로 요청이 나가고, 성공하면 바로 로그인 처리된다.
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './authContext'
@@ -20,6 +22,7 @@ export function SignupPage() {
       await signup(email, password, displayName)
       navigate('/servers')
     } catch (err) {
+      // ApiError는 client.ts의 apiFetch가 서버 응답을 해석해서 던지는 에러 타입
       setError(err instanceof ApiError ? err.message : '회원가입에 실패했습니다')
     } finally {
       setBusy(false)

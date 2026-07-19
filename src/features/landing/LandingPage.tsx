@@ -1,3 +1,6 @@
+// 비로그인 사용자가 처음 보는 소개(랜딩) 페이지. 스크롤 애니메이션 위주의 마케팅 화면이라
+// 백엔드 요청은 거의 없고, useAuth()로 로그인 여부만 확인해서 CTA 버튼 목적지를 바꾼다
+// (로그인 상태면 /servers로, 아니면 /signup으로 이동).
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -298,6 +301,7 @@ export function LandingPage() {
   const { scrollY } = useScroll()
   useMotionValueEvent(scrollY, 'change', (v) => setScrolled(v > 24))
 
+  // 메인 CTA 버튼 동작: 로그인 상태(token 있음)면 서버 목록으로, 아니면 회원가입으로 보낸다
   function onMainCta() {
     navigate(token ? '/servers' : '/signup')
   }

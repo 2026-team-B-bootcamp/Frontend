@@ -1,3 +1,8 @@
+/**
+ * 채팅 화면 좌측 사이드바 — 현재 서버 이름/초대코드, 채널 목록, 채널 추가, 내 프로필/로그아웃 버튼.
+ * 채널 선택은 라우팅(Link)으로 처리하고, 채널 추가는 onAddChannel prop을 통해
+ * ChatPage가 servers/api.ts(createChannel)로 백엔드에 요청하도록 위임한다.
+ */
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
@@ -36,6 +41,7 @@ export function ChannelSidebar({
     }
   }
 
+  // 채널 추가 폼 제출 — 실제 생성 요청은 부모(ChatPage)의 onAddChannel이 담당
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     const name = newChannel.trim()
@@ -74,6 +80,7 @@ export function ChannelSidebar({
       </div>
 
       <div className="sidebar-section">채널</div>
+      {/* 채널 선택: 라우트만 바꾸면 ChatPage가 channelId를 읽어 해당 채팅방을 보여준다 */}
       <nav className="sidebar-channels">
         {channels.map((c) => (
           <Link

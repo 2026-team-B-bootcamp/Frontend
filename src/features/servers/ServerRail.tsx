@@ -1,3 +1,8 @@
+/**
+ * 채팅 화면 맨 왼쪽에 붙는 서버 아이콘 세로 레일.
+ * 아이콘 클릭으로 서버를 전환하고(onSelect), "+" 버튼으로 서버 추가/참여 모달을 연다(onAdd).
+ * 실제 데이터 로드는 상위(ChatPage)가 servers/api.ts로 미리 해두고 목록만 props로 받는다.
+ */
 import { motion } from 'motion/react'
 import { PlusIcon } from '../../shared/ui/icons'
 import { serverColor } from '../../shared/lib/colors'

@@ -1,3 +1,5 @@
+// 앱 전역에서 재사용하는 SVG 라인 아이콘 모음. 로직 없이 순수 UI 컴포넌트라
+// 여러 feature 화면(랜딩, 채팅, 게임 등)에서 import해서 그대로 쓴다.
 import type { SVGProps } from 'react'
 
 // web-warm-workspace 팩: 이모지 대신 1.5px stroke 단색 라인 아이콘 사용

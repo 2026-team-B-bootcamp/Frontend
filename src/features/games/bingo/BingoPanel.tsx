@@ -1,3 +1,8 @@
+/**
+ * 빙고 게임의 패널 컴포넌트 — 서버와의 통신(참여/클릭/조회)과 승리 연출을 모두 이 파일이 담당한다.
+ * 흐름: BingoPanel(여기) → bingo/api.ts → shared/api/client.ts → 백엔드 빙고 라우터.
+ * 실제 판 그리기는 BingoBoard에 위임하고, 여기서는 상태 관리와 이벤트 처리만 한다.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
@@ -22,8 +27,10 @@ export function BingoPanel({
   const prevWinnerRef = useRef<number | null>(null)
 
   const winner = state?.winner_user_id ?? null
+  // 서버가 내려준 내 보드가 있어야만 "게임 참여 중"으로 본다
   const inGame = state !== null && state.my_board !== null
 
+  // 서버에서 최신 게임 상태를 가져와 화면 상태(state)에 반영
   const refetch = useCallback(() => {
     getBingo(channelId)
       .then((s) => setState(s))
@@ -54,6 +61,7 @@ export function BingoPanel({
     prevWinnerRef.current = winner
   }, [winner, userId])
 
+  // "게임 열기/참여" 버튼 클릭 시 서버에 참여 요청을 보내고 받은 상태로 화면을 갱신
   async function onJoin() {
     setBusy(true)
     setError(null)
@@ -66,6 +74,7 @@ export function BingoPanel({
     }
   }
 
+  // 보드의 숫자 칸을 클릭했을 때 서버에 클릭을 전달 — 이미 승자가 정해졌으면 요청하지 않는다
   async function onCellClick(n: number) {
     if (winner !== null) return
     try {
@@ -104,6 +113,7 @@ export function BingoPanel({
     <div className="bingo-panel">
       {error && <div className="error">{error}</div>}
 
+      {/* 승자가 정해지면(3줄 완성) 누가 이겼는지 배너로 보여준다 — 내가 이겼을 때는 위 useEffect에서 confetti도 함께 터진다 */}
       {winner !== null && (
         <motion.div
           className={`banner ${winner === userId ? 'win' : 'lose'}`}

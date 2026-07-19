@@ -1,3 +1,10 @@
+/**
+ * 끝말잇기 게임 패널.
+ * 서버와의 통신(api.ts, 내부적으로 shared/api/client 경유)과 턴 진행(제한시간 타이머,
+ * 단어 제출) 관리를 담당한다. 단어가 규칙에 맞는지(첫 글자 일치, 중복 여부 등)의
+ * 검증은 서버가 판정하며, 이 컴포넌트는 그 결과만 받아 화면에 반영한다.
+ * 흐름: 이 패널 → wordchain/api.ts → 백엔드 끝말잇기 라우터.
+ */
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
@@ -14,6 +21,7 @@ import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
 
 const TURN_TOTAL = 30
 
+// 내 차례에 남은 시간을 원형 게이지로 보여준다. 10초 이하면 danger 스타일로 강조.
 function TimerRing({ seconds }: { seconds: number }) {
   const r = 15
   const c = 2 * Math.PI * r
@@ -93,7 +101,8 @@ export function WordChainPanel({
     [subscribe, refetch],
   )
 
-  // 로컬 카운트다운: 0이 되면 서버에 판정을 요청한다 (탈락 처리는 서버 몫)
+  // 로컬 카운트다운: 매초 1씩 줄이다가 0이 되면 refetch로 서버에 최신 판정을 요청한다
+  // (시간 초과로 인한 탈락 처리는 서버가 담당하고, 여기선 화면 표시용 시계만 돈다)
   useEffect(() => {
     if (state?.status !== 'playing' || seconds === null) return
     if (seconds <= 0) {
@@ -104,7 +113,7 @@ export function WordChainPanel({
     return () => clearTimeout(t)
   }, [seconds, state?.status, refetch])
 
-  // 승부가 난 순간: 내가 이겼으면 축하 연출
+  // 게임 상태가 playing → finished로 바뀐 순간, 승자가 나(userId)라면 컨페티를 터뜨린다
   useEffect(() => {
     if (
       state?.status === 'finished' &&
@@ -120,6 +129,8 @@ export function WordChainPanel({
     chainEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [state?.words.length])
 
+  // 참여/시작/단어 제출 등 서버에 변경을 요청하는 모든 액션의 공통 래퍼.
+  // busy로 중복 요청을 막고, 실패 시(예: 규칙에 맞지 않는 단어) 에러 메시지를 보여준다.
   async function run(fn: () => Promise<WordChainState>) {
     setBusy(true)
     setError(null)
@@ -134,6 +145,8 @@ export function WordChainPanel({
     }
   }
 
+  // 입력창의 단어를 서버로 제출한다. 유효성 검사(끝말잇기 규칙 위반 등)는 서버가
+  // 판정하고, 성공한 경우에만 입력창을 비운다.
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     const word = draft.trim()
@@ -163,6 +176,7 @@ export function WordChainPanel({
   const myTurn = state.turn_user_id === userId
   const turnPlayer = state.players.find((p) => p.user_id === state.turn_user_id)
   const lastWord = state.words.at(-1)
+  // 다음 단어가 시작해야 할 글자(화면 힌트용). 실제 두음법칙 등 검증은 서버가 한다.
   const nextChar = lastWord ? lastWord.word.at(-1) : null
 
   return (

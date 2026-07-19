@@ -1,3 +1,5 @@
+// 라우팅 최상위 컴포넌트. 이 앱의 모든 화면(URL 경로)을 여기서 정의한다.
+// 로그인이 필요한 경로는 RequireAuth로 감싸서, 토큰이 없으면 자동으로 /login으로 보낸다.
 import { useEffect } from 'react'
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { RequireAuth } from './features/auth/RequireAuth'
@@ -46,6 +48,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      {/* 아래 세 경로는 로그인해야만 볼 수 있어서 RequireAuth로 감싼다 (토큰 없으면 /login으로 리다이렉트) */}
       <Route
         path="/servers"
         element={

@@ -1,3 +1,7 @@
+/**
+ * 서버(모임) 만들기 / 초대코드로 참여하기 폼 — 온보딩 페이지와 서버 추가 모달에서 공용으로 쓰인다.
+ * servers/api.ts의 createServer, joinServer가 실제 백엔드 요청을 보낸다.
+ */
 import { useState, type FormEvent } from 'react'
 import { createServer, joinServer, type Server } from './api'
 import { ApiError } from '../../shared/api/client'
@@ -10,6 +14,7 @@ export function ServerForms({ onDone }: { onDone: (server: Server) => void }) {
   const [joining, setJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // 새 서버 생성: api로 백엔드에 만들고 나면 onDone으로 부모에게 생성된 서버를 전달
   async function onCreate(e: FormEvent) {
     e.preventDefault()
     if (!newName.trim()) return
@@ -25,6 +30,7 @@ export function ServerForms({ onDone }: { onDone: (server: Server) => void }) {
     }
   }
 
+  // 초대코드로 참여: 코드를 대문자로 맞춰 api에 보내고, 성공하면 참여한 서버를 전달
   async function onJoin(e: FormEvent) {
     e.preventDefault()
     if (!inviteCode.trim()) return

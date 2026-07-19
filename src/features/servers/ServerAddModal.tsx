@@ -1,3 +1,7 @@
+/**
+ * 서버 레일의 "+" 버튼을 누르면 뜨는 모달 껍데기.
+ * 실제 서버 생성/초대코드 참여 로직은 ServerForms에 그대로 위임한다.
+ */
 import { motion } from 'motion/react'
 import { ServerForms } from './ServerForms'
 import type { Server } from './api'

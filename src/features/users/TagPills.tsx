@@ -8,6 +8,7 @@ function hueFor(tag: string) {
   return HUES[h % HUES.length]
 }
 
+// tags: 보여줄 태그 목록, common: 그중 "나와 겹치는" 태그 (있으면 강조 스타일 적용)
 export function TagPills({
   tags,
   common,

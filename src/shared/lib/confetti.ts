@@ -1,3 +1,5 @@
+// 게임 승리 등 축하 이벤트에서 화면에 색종이(confetti) 효과를 터뜨리는 유틸.
+// 순수 화면 연출용이며 백엔드 요청과는 무관하다.
 import confetti from 'canvas-confetti'
 
 /** 승리 연출: 가운데 팡 + 좌우 크래커 */

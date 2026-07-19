@@ -1,3 +1,5 @@
+// 로그인 화면. 폼 제출 시 AuthContext의 login()을 호출해서
+// authApi.login -> apiFetch -> 백엔드 순으로 요청이 나가고, 성공하면 토큰이 저장된다.
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from './authContext'
@@ -19,6 +21,7 @@ export function LoginPage() {
       await login(email, password)
       navigate('/servers')
     } catch (err) {
+      // ApiError는 client.ts의 apiFetch가 서버 응답을 해석해서 던지는 에러 타입
       setError(err instanceof ApiError ? err.message : '로그인에 실패했습니다')
     } finally {
       setBusy(false)

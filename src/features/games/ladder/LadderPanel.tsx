@@ -1,3 +1,10 @@
+/**
+ * 사다리타기 게임 패널.
+ * 서버와의 통신(api.ts, 내부적으로 shared/api/client 경유)과 게임 진행 상태 관리를
+ * 담당하는 컴포넌트다. 실제 사다리 그림은 LadderBoard가 그린다.
+ * 흐름: 이 패널 → ladder/api.ts → 백엔드 사다리타기 라우터, 그리고 실시간 이벤트로
+ * 다른 참가자의 변경 사항도 함께 반영된다.
+ */
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   addParticipant,
@@ -108,6 +115,10 @@ export function LadderPanel({
 
   useEffect(
     () =>
+      // 실시간 채널을 구독해서 서버가 보내는 사다리 상태 변화를 그대로 반영한다.
+      // 대기중(waiting) → 공개(revealed)로 막 바뀐 순간에만 컨페티를 터뜨리는데,
+      // 1700ms 지연은 LadderBoard의 토큰 이동 애니메이션(REVEAL_DELAY=1.7초)이
+      // 끝나는 시점에 맞춘 것이다.
       subscribe((e) => {
         if (e.type === 'ladder.state') {
           const next = e.payload as unknown as LadderState
@@ -123,6 +134,8 @@ export function LadderPanel({
     [subscribe, refetch],
   )
 
+  // 참가자 추가/삭제, 사다리 타기 등 서버에 변경을 요청하는 모든 액션의 공통 래퍼.
+  // busy로 중복 요청을 막고, 실패 시 에러 메시지를 보여준다.
   async function run(fn: () => Promise<LadderState>) {
     setBusy(true)
     setError(null)
@@ -153,7 +166,9 @@ export function LadderPanel({
     )
   }
 
+  // 결과가 공개된 상태인지 여부. 공개되면 편집 UI 대신 사다리 보드를 보여준다.
   const revealed = state.status === 'revealed'
+  // 사다리를 탈 수 있는 조건: 아직 공개 전이고, 참가자/결과가 2명 이상 & 같은 개수
   const canRun =
     !revealed &&
     state.participants.length >= 2 &&

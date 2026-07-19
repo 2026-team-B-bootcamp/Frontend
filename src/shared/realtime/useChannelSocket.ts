@@ -1,3 +1,5 @@
+// ws.ts의 저수준 WebSocket을 React 컴포넌트에서 쓰기 쉽게 감싼 훅.
+// 채팅 화면(ChatPage 등)이 이 훅을 호출해서 접속자 목록/타이핑 상태/실시간 이벤트를 받는다.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { connectChannelSocket, type ChannelSocket, type WsEvent } from './ws'
 
@@ -21,6 +23,7 @@ export function useChannelSocket(channelId: number, token: string | null) {
   const sockRef = useRef<ChannelSocket | null>(null)
   const listenersRef = useRef<Set<WsListener>>(new Set())
 
+  // channelId나 token이 바뀔 때마다 소켓을 새로 열고, 언마운트/변경 시 정리(close)한다
   useEffect(() => {
     if (!token || !Number.isFinite(channelId)) return
     const sock = connectChannelSocket(channelId, token, (e) => {
@@ -41,6 +44,7 @@ export function useChannelSocket(channelId: number, token: string | null) {
     })
     sockRef.current = sock
 
+    // 1초마다 타이핑 상태를 훑어서 3초 지난(until 만료) 사람은 목록에서 지운다
     const pruner = setInterval(() => {
       setTypers((prev) => {
         const now = Date.now()

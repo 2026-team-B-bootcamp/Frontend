@@ -12,6 +12,7 @@ const LAST_SERVER_KEY = 'last_server_id'
  * - 참여한 서버가 있으면 → 마지막 방문 서버(없으면 첫 서버)의 채팅으로 즉시 이동
  * - 하나도 없으면 → 온보딩 (만들기 / 초대코드 참여)
  * 서버 전환은 채팅 화면의 레일에서 하므로 별도 목록 페이지는 두지 않는다.
+ * 서버 목록은 servers/api.ts(listServers)로 백엔드에서 받아온다.
  */
 export function ServerListPage() {
   const { displayName, logout } = useAuth()
@@ -36,6 +37,7 @@ export function ServerListPage() {
     }
   }, [])
 
+  // 서버가 있으면 마지막 방문 서버(저장 안 됐으면 첫 서버)로 자동 이동
   useEffect(() => {
     if (!servers || servers.length === 0) return
     const stored = localStorage.getItem(LAST_SERVER_KEY)

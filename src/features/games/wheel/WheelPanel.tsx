@@ -1,3 +1,10 @@
+/**
+ * 돌림판 게임 패널.
+ * 서버와의 통신(api.ts, 내부적으로 shared/api/client 경유)과 게임 진행 상태 관리를
+ * 담당하는 컴포넌트다. 실제 원판 그림/회전은 WheelDial이 그린다.
+ * 흐름: 이 패널 → wheel/api.ts → 백엔드 돌림판 라우터, 실시간 이벤트로 당첨 결과를
+ * 받으면 바늘이 멈출 각도를 계산해 회전 애니메이션을 실행한다.
+ */
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
 import {
@@ -14,6 +21,9 @@ import { fireWinConfetti } from '../../../shared/lib/confetti'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
 import { WheelDial } from './WheelDial'
 
+// 당첨 항목(index)이 포인터(맨 위, 0도) 위치에 오도록 필요한 회전 각도를 계산한다.
+// spins바퀴만큼 더 돌려서 매번 다른 회전량처럼 보이게 하고, 그 위에 당첨 조각의
+// 중심 각도(center)를 포인터 위치로 맞추기 위한 보정값을 더한다.
 function targetRotation(index: number, count: number, spins: number) {
   const seg = 360 / count
   const center = (index + 0.5) * seg
@@ -70,6 +80,9 @@ export function WheelPanel({
 
   useEffect(
     () =>
+      // 실시간 채널을 구독해서 다른 참가자의 항목 추가/삭제, 그리고 당첨 결과까지
+      // 서버가 보내는 상태 그대로 반영한다. 실제 회전 각도 계산은 위쪽 렌더 중
+      // 파생 로직에서 처리된다.
       subscribe((e) => {
         if (e.type === 'wheel.state') {
           setState(e.payload as unknown as WheelState)
@@ -91,6 +104,8 @@ export function WheelPanel({
     prevResultRef.current = resultId
   }, [state?.result_option_id])
 
+  // 항목 추가/삭제, 돌리기 등 서버에 변경을 요청하는 모든 액션의 공통 래퍼.
+  // busy로 중복 요청을 막고, 실패 시 에러 메시지를 보여준다.
   async function run(fn: () => Promise<WheelState>) {
     setBusy(true)
     setError(null)
