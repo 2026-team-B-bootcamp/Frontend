@@ -1,0 +1,94 @@
+/* 인증 + 온보딩 화면 — 중앙 카드, 상단 라디얼 글로우 */
+
+.center-screen {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  position: relative;
+  isolation: isolate;
+}
+
+.center-screen::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  translate: -50% 0;
+  width: 680px;
+  height: 460px;
+  background: var(--glow);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.auth-box {
+  width: 100%;
+  max-width: 380px;
+}
+
+.auth-box h1 {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+/* ---------- 온보딩 (참여한 서버가 없을 때) ---------- */
+
+.onboard-box {
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.onboard-box h1 {
+  font-size: 22px;
+}
+
+.onboard-box .server-forms {
+  text-align: left;
+}
+
+.onboard-logout {
+  margin-top: 18px;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  padding: 0;
+}
+
+.onboard-logout:hover {
+  color: var(--text);
+}
+
+/* ---------- 서버 만들기/참여 폼 (온보딩 + 모달 공용) ---------- */
+
+.server-forms-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin-bottom: 8px;
+}
+
+.server-forms-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.server-forms-or::before,
+.server-forms-or::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+.invite-input {
+  font-family: var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

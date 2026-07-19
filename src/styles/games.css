@@ -1,0 +1,498 @@
+/* 게임 — 스코어바, 빙고, 끝말잇기, 돌림판, 사다리타기 */
+
+.panel-scorebar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.score {
+  padding: 3px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--text-h);
+}
+
+.score.me {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.score.turn {
+  border-color: var(--accent-2-border);
+  background: var(--accent-2-bg);
+  color: var(--accent-2-text);
+  font-weight: 700;
+  animation: turn-pulse 1.6s ease-in-out infinite;
+}
+
+.score.dead {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+@keyframes turn-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 161, 60, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(217, 161, 60, 0);
+  }
+}
+
+/* ---------- 빙고 ---------- */
+
+.bingo-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  max-width: 100%;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.bingo-cell {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-h);
+  font-size: 16px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  transition: border-color 150ms var(--ease), background 150ms var(--ease);
+}
+
+.bingo-cell:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.bingo-cell.marked {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.bingo-cell.line {
+  box-shadow: 0 0 0 2px var(--accent-2) inset;
+}
+
+.bingo-cell:disabled {
+  cursor: default;
+}
+
+/* ---------- 끝말잇기 ---------- */
+
+.wc-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.wc-event {
+  font-size: 12px;
+  text-align: center;
+  color: var(--accent-2-text);
+  background: var(--accent-2-bg);
+  border: 1px solid var(--accent-2-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+
+.wc-turnbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px 12px;
+}
+
+.wc-timer {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.wc-timer.danger {
+  color: var(--danger);
+}
+
+.wc-timer.danger .wc-timer-num {
+  color: var(--danger);
+  animation: turn-pulse 0.8s ease-in-out infinite;
+}
+
+.wc-timer-num {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--text-h);
+}
+
+.wc-turn-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.wc-next-char {
+  color: var(--accent-text);
+  font-size: 14px;
+}
+
+.wc-chain {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  padding: 4px 2px 10px;
+}
+
+.wc-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 12px 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.wc-chip.mine {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.wc-chip-word {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-h);
+  letter-spacing: 0.02em;
+}
+
+.wc-chip-author {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.wc-input {
+  display: flex;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.wc-input .input {
+  flex: 1;
+}
+
+/* ---------- 공용: 항목 추가 폼/목록 (돌림판, 사다리) ---------- */
+
+.wheel-input {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.wheel-input .input {
+  flex: 1;
+}
+
+.wheel-options {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wheel-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.wheel-option-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.wheel-option-remove {
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.wheel-option-remove:hover {
+  color: var(--danger);
+}
+
+.wheel-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* ---------- 돌림판 ---------- */
+
+.wheel-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.wheel-dial-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  margin: 4px auto 14px;
+}
+
+.wheel-dial {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 14px solid var(--text-h);
+  z-index: 1;
+}
+
+.wheel-empty-text {
+  font-size: 9px;
+  fill: var(--text-faint);
+}
+
+.wheel-slice-label {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #fff;
+  pointer-events: none;
+}
+
+/* ---------- 사다리타기 ---------- */
+
+.ladder-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ladder-entries {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.ladder-entry-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ladder-entry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--text-h);
+}
+
+.ladder-board-wrap {
+  margin-bottom: 12px;
+}
+
+.ladder-labels {
+  display: flex;
+  justify-content: space-around;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.ladder-label {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ladder-label.result {
+  color: var(--accent-text);
+}
+
+.ladder-svg {
+  display: block;
+  width: 100%;
+}
+
+/* ---------- 오목 ---------- */
+
+.omok-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.omok-board {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--accent-2-bg);
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  margin: 0 auto 4px;
+}
+
+.omok-cell {
+  position: relative;
+  border: none;
+  background: none;
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+.omok-cell::before,
+.omok-cell::after {
+  content: '';
+  position: absolute;
+  background: var(--border-bright);
+}
+
+/* 세로선 — 칸 가운데를 지난다 */
+.omok-cell::before {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
+/* 가로선 */
+.omok-cell::after {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+
+/* 판 가장자리에서 선이 밖으로 삐져나오지 않게 교차점에서 끊는다 */
+.omok-cell.edge-top::before {
+  top: 50%;
+}
+.omok-cell.edge-bottom::before {
+  bottom: 50%;
+}
+.omok-cell.edge-left::after {
+  left: 50%;
+}
+.omok-cell.edge-right::after {
+  right: 50%;
+}
+
+.omok-cell:hover:not(:disabled) {
+  background: var(--accent-bg);
+  border-radius: 4px;
+}
+
+.omok-cell:disabled {
+  cursor: default;
+}
+
+.omok-star {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border-bright);
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.omok-stone {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 82%;
+  height: 82%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.omok-stone.black {
+  background: radial-gradient(circle at 35% 30%, #4a4640, #16130d);
+}
+
+.omok-stone.white {
+  background: radial-gradient(circle at 35% 30%, #ffffff, #d9cfb8);
+  border: 1px solid var(--border-bright);
+}
+
+.omok-stone.last {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.omok-stone.win {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 7px 1px var(--accent);
+}
