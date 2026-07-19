@@ -381,3 +381,118 @@
   display: block;
   width: 100%;
 }
+
+/* ---------- 오목 ---------- */
+
+.omok-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.omok-board {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--accent-2-bg);
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  margin: 0 auto 4px;
+}
+
+.omok-cell {
+  position: relative;
+  border: none;
+  background: none;
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+.omok-cell::before,
+.omok-cell::after {
+  content: '';
+  position: absolute;
+  background: var(--border-bright);
+}
+
+/* 세로선 — 칸 가운데를 지난다 */
+.omok-cell::before {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
+/* 가로선 */
+.omok-cell::after {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+
+/* 판 가장자리에서 선이 밖으로 삐져나오지 않게 교차점에서 끊는다 */
+.omok-cell.edge-top::before {
+  top: 50%;
+}
+.omok-cell.edge-bottom::before {
+  bottom: 50%;
+}
+.omok-cell.edge-left::after {
+  left: 50%;
+}
+.omok-cell.edge-right::after {
+  right: 50%;
+}
+
+.omok-cell:hover:not(:disabled) {
+  background: var(--accent-bg);
+  border-radius: 4px;
+}
+
+.omok-cell:disabled {
+  cursor: default;
+}
+
+.omok-star {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border-bright);
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.omok-stone {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 82%;
+  height: 82%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.omok-stone.black {
+  background: radial-gradient(circle at 35% 30%, #4a4640, #16130d);
+}
+
+.omok-stone.white {
+  background: radial-gradient(circle at 35% 30%, #ffffff, #d9cfb8);
+  border: 1px solid var(--border-bright);
+}
+
+.omok-stone.last {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.omok-stone.win {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 7px 1px var(--accent);
+}

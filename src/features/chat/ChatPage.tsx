@@ -1,3 +1,9 @@
+/**
+ * 서버(모임) 하나에 들어왔을 때 보이는 채팅 화면 전체를 구성하는 최상위 페이지.
+ * 좌측 서버 레일 + 채널 사이드바, 가운데 채팅방(ChatRoom), 우측 멤버/미니게임 패널을 조립한다.
+ * 서버·채널 목록은 servers/api.ts로 불러오고, 실시간 연결은 useChannelSocket 훅 하나로 열어서
+ * 그 결과(subscribe, online, typers)를 ChatRoom과 미니게임 패널들에 그대로 내려준다.
+ */
 import { useEffect, useState, type ComponentType } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
@@ -17,9 +23,11 @@ import { BingoPanel } from '../games/bingo/BingoPanel'
 import { WordChainPanel } from '../games/wordchain/WordChainPanel'
 import { WheelPanel } from '../games/wheel/WheelPanel'
 import { LadderPanel } from '../games/ladder/LadderPanel'
+import { OmokPanel } from '../games/omok/OmokPanel'
 import {
   BingoPreview,
   LadderPreview,
+  OmokPreview,
   WheelPreview,
   WordChainPreview,
 } from '../games/GamePreviews'
@@ -29,13 +37,14 @@ import { DiceIcon, UsersIcon } from '../../shared/ui/icons'
 import { useChannelSocket } from '../../shared/realtime/useChannelSocket'
 
 type PanelTab = 'members' | 'minigame'
-type GameKind = 'bingo' | 'wordchain' | 'wheel' | 'ladder'
+type GameKind = 'bingo' | 'wordchain' | 'wheel' | 'ladder' | 'omok'
 
 const GAMES: { key: GameKind; label: string; Preview: ComponentType }[] = [
   { key: 'bingo', label: '빙고', Preview: BingoPreview },
   { key: 'wordchain', label: '끝말잇기', Preview: WordChainPreview },
   { key: 'wheel', label: '돌림판', Preview: WheelPreview },
   { key: 'ladder', label: '사다리타기', Preview: LadderPreview },
+  { key: 'omok', label: '오목', Preview: OmokPreview },
 ]
 
 export function ChatPage() {
@@ -53,8 +62,10 @@ export function ChatPage() {
   const [showAddServer, setShowAddServer] = useState(false)
   const [membersRefresh, setMembersRefresh] = useState(0)
 
+  // 채널의 실시간 웹소켓 연결. subscribe로 이벤트 구독, online/typers는 접속중/입력중 상태
   const { subscribe, online, typers, sendTyping } = useChannelSocket(cid, token)
 
+  // 서버 레일에 보여줄 내가 속한 서버 목록을 백엔드에서 가져온다
   useEffect(() => {
     let active = true
     listServers()
@@ -93,6 +104,7 @@ export function ChatPage() {
     navigate('/login')
   }
 
+  // 채널 추가: api로 백엔드에 생성 요청 후, 목록에 반영하고 새 채널로 바로 이동
   async function onAddChannel(name: string) {
     const ch = await createChannel(sid, name)
     setChannels((prev) => [...prev, ch])
@@ -188,6 +200,7 @@ export function ChatPage() {
             </div>
             <div className="panel-body">
               {panel === 'members' && (
+                // 프로필 저장 후(membersRefresh 증가) key가 바뀌어 리마운트 → 태그 변경이 바로 반영됨
                 <MembersPanel
                   key={`${sid}-${membersRefresh}`}
                   serverId={sid}
@@ -219,6 +232,9 @@ export function ChatPage() {
                   )}
                   {gameKind === 'ladder' && (
                     <LadderPanel channelId={cid} subscribe={subscribe} />
+                  )}
+                  {gameKind === 'omok' && (
+                    <OmokPanel channelId={cid} subscribe={subscribe} />
                   )}
                 </>
               )}

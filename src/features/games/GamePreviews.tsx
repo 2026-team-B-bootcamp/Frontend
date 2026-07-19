@@ -64,6 +64,23 @@ export function WheelPreview() {
   )
 }
 
+export function OmokPreview() {
+  const lines = [10, 20, 30]
+  return (
+    <svg viewBox="0 0 40 40" className="game-preview-svg">
+      {lines.map((p) => (
+        <line key={`h${p}`} x1={10} y1={p} x2={30} y2={p} stroke="var(--border-bright)" strokeWidth={1.4} />
+      ))}
+      {lines.map((p) => (
+        <line key={`v${p}`} x1={p} y1={10} x2={p} y2={30} stroke="var(--border-bright)" strokeWidth={1.4} />
+      ))}
+      <circle cx={20} cy={20} r={4.5} fill="var(--text-h)" />
+      <circle cx={30} cy={10} r={4.5} fill="var(--surface)" stroke="var(--border-bright)" strokeWidth={1.2} />
+      <circle cx={10} cy={30} r={4.5} fill="var(--accent)" />
+    </svg>
+  )
+}
+
 export function LadderPreview() {
   return (
     <svg viewBox="0 0 40 40" className="game-preview-svg">

@@ -1,3 +1,9 @@
+/**
+ * 실제 채팅 로그를 그리고 메시지를 보내는 컴포넌트 — 이 화면의 핵심.
+ * 메시지 전송/조회는 chat/api.ts(sendMessage, listMessages)가 백엔드로 요청을 보내고,
+ * 남이 보낸 메시지는 ChatPage에서 내려준 subscribe(useChannelSocket)로 실시간 수신한다.
+ * 그 외에 관심사 태그가 겹치는 멤버에게 AI 아이스브레이커 질문을 붙여넣는 기능도 여기에 있다.
+ */
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
@@ -53,11 +59,16 @@ export function ChatRoom({
   const [ibMembers, setIbMembers] = useState<Member[] | null>(null)
   const [ibBusy, setIbBusy] = useState(false)
 
+  const [initialIds, setInitialIds] = useState<Set<number> | null>(null)
   const cursorRef = useRef(0)
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const lastTypingRef = useRef(0)
+  const scrolledOnceRef = useRef(false)
 
+  // 새로 받은 메시지를 기존 목록에 합치는 핵심 함수.
+  // 이미 가진 id는 걸러내 중복을 막고(초기 로드 + 실시간 수신이 겹칠 수 있음),
+  // cursorRef에 가장 큰 메시지 id를 기억해뒀다가 재연결 시 "그 이후만" 다시 불러오는 데 쓴다.
   function merge(incoming: Message[]) {
     if (incoming.length === 0) return
     setMessages((prev) => {
@@ -68,11 +79,15 @@ export function ChatRoom({
     cursorRef.current = Math.max(cursorRef.current, ...incoming.map((m) => m.id))
   }
 
+  // 채널에 처음 들어왔을 때 최근 메시지 목록을 불러온다 (chat/api.ts → 백엔드)
   useEffect(() => {
     let active = true
     listMessages(channelId)
       .then((msgs) => {
-        if (active) merge(msgs)
+        if (active) {
+          merge(msgs)
+          setInitialIds(new Set(msgs.map((m) => m.id)))
+        }
       })
       .catch((err) => {
         if (active) setError(err instanceof ApiError ? err.message : '메시지를 불러오지 못했습니다')
@@ -100,7 +115,10 @@ export function ChatRoom({
   )
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length === 0) return
+    // 채널에 처음 들어왔을 때는 스크롤 애니메이션 없이 바로 맨 아래로, 이후 새 메시지부터 부드럽게
+    bottomRef.current?.scrollIntoView({ behavior: scrolledOnceRef.current ? 'smooth' : 'auto' })
+    scrolledOnceRef.current = true
   }, [messages.length])
 
   function onDraftChange(value: string) {
@@ -112,6 +130,8 @@ export function ChatRoom({
     }
   }
 
+  // 메시지 전송: sendMessage api가 백엔드에 POST하고, 응답으로 받은 메시지를 바로 merge해서
+  // 내 화면에 즉시 반영한다 (다른 사람에게는 실시간 이벤트로 전달됨)
   async function onSend(e: FormEvent) {
     e.preventDefault()
     const content = draft.trim()
@@ -143,6 +163,7 @@ export function ChatRoom({
     }
   }
 
+  // 고른 멤버를 상대로 AI가 만든 첫 질문(아이스브레이커)을 받아와 입력창에 채워준다
   async function onPickIbTarget(targetId: number) {
     setIbBusy(true)
     try {
@@ -192,10 +213,13 @@ export function ChatRoom({
               new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() <
                 GROUP_WINDOW_MS
             const hasTags = m.tags.some((t) => t && t.trim().length > 0)
+            // 채널 진입 시 처음 불러온 메시지들은 애니메이션 없이 바로 보여주고,
+            // 그 이후 실시간으로 도착하는 메시지만 슬라이드 인 한다.
+            const isInitial = initialIds?.has(m.id) ?? true
             return (
               <motion.div
                 key={m.id}
-                initial={{ opacity: 0, y: 8 }}
+                initial={isInitial ? false : { opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.18, ease: 'easeOut' }}
               >
@@ -214,6 +238,7 @@ export function ChatRoom({
                         <span className="chat-name" style={{ color: avatarColor(m.user_id) }}>
                           {m.display_name}
                         </span>
+                        {/* 발신자 이름 옆 관심사 태그 (겹치는 태그 하이라이트는 common prop이 있을 때만) */}
                         {hasTags && <TagPills tags={m.tags} />}
                         <span className="chat-time">{timeLabel(m.created_at)}</span>
                       </div>
@@ -280,6 +305,7 @@ export function ChatRoom({
                     {m.display_name.charAt(0)}
                   </span>
                   <span className="ib-target-name">{m.display_name}</span>
+                  {/* common_with_me: 나와 겹치는 태그 — TagPills가 강조 표시해줌 */}
                   <TagPills tags={m.tags} common={m.common_with_me} />
                 </button>
               ))

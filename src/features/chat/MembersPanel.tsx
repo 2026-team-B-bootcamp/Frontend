@@ -1,3 +1,8 @@
+/**
+ * 채팅 화면 우측 "멤버" 패널 — 현재 서버에 속한 멤버 목록과 각자의 관심사 태그를 보여준다.
+ * servers/api.ts의 getMembers로 멤버 목록을 불러오고, 태그 렌더링/겹치는 태그 강조는
+ * TagPills 컴포넌트에 위임한다.
+ */
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/authContext'
 import { getMembers, type Member } from '../servers/api'
@@ -29,7 +34,10 @@ export function MembersPanel({ serverId, online }: { serverId: number; online: S
     <div>
       <div className="panel-title">멤버 — {members.length}</div>
       {error && <div className="error">{error}</div>}
-      {members.map((m) => {
+      {/* 접속 중인 멤버가 위로 오도록 정렬 */}
+      {[...members]
+        .sort((a, b) => Number(online.has(b.user_id)) - Number(online.has(a.user_id)))
+        .map((m) => {
         const me = m.user_id === userId
         const isOnline = online.has(m.user_id)
         return (
@@ -45,6 +53,7 @@ export function MembersPanel({ serverId, online }: { serverId: number; online: S
                 {m.display_name}
                 {me && <span className="muted">(나)</span>}
               </div>
+              {/* common_with_me: 내 태그와 겹치는 항목 — TagPills가 하이라이트해서 보여준다 */}
               <TagPills tags={m.tags} common={m.common_with_me} />
             </div>
           </div>

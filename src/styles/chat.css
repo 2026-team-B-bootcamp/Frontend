@@ -350,7 +350,7 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 4px 16px;
+  padding: 9px 16px;
 }
 
 .chat-row:hover {
@@ -358,8 +358,8 @@
 }
 
 .chat-row.grouped {
-  padding-top: 1px;
-  padding-bottom: 1px;
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 
 .chat-avatar {

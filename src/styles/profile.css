@@ -1,0 +1,148 @@
+/* 프로필 편집 모달 — warm-workspace 톤(둥근 카드, 옅은 그림자, 라인 아이콘)을
+   기존 오렌지/베이지 토큰 위에 얹은 버전 */
+
+.profile-modal {
+  max-width: 420px;
+  padding-top: 22px;
+}
+
+.avatar-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.avatar-edit-photo {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+  transition: transform 220ms var(--ease), box-shadow 220ms var(--ease);
+}
+
+.avatar-edit-photo:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.avatar-edit-photo:disabled {
+  cursor: not-allowed;
+}
+
+.avatar-edit-photo-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.avatar-edit-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-edit-initial {
+  font-size: 34px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.avatar-edit-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+  transition: transform 220ms var(--ease), border-color 220ms var(--ease);
+}
+
+.avatar-edit-photo:hover:not(:disabled) .avatar-edit-badge {
+  transform: scale(1.08);
+  border-color: var(--accent-border);
+  color: var(--accent-text);
+}
+
+.avatar-edit-spinner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(50, 45, 36, 0.35);
+}
+
+.avatar-edit-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  animation: profile-spin 700ms linear infinite;
+}
+
+@keyframes profile-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.avatar-edit-link {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.avatar-edit-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.avatar-edit-link:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.profile-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 18px 0 14px;
+}
+
+.profile-section-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-edit-photo,
+  .avatar-edit-badge {
+    transition: none;
+  }
+}

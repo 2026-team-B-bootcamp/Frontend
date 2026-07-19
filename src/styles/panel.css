@@ -44,6 +44,11 @@
   flex: 1;
   overflow-y: auto;
   padding: 14px 12px;
+  scrollbar-width: none; /* Firefox */
+}
+
+.panel-body::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge */
 }
 
 .game-select-grid {
