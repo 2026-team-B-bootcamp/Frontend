@@ -1,44 +1,48 @@
-/* 웜 오렌지+베이지 라이트 테마 — 밝은 베이지 캔버스 위 크림 타일,
-   주황(1차)·앰버(2차) 강조. 고딕(Pretendard/Inter) 타이포와
-   타일·발광 보더 구조는 다크 벤토 팩에서 승계. */
+/* 이리데센트 마케팅 플로우 테마 — 화이트 캔버스 + 잉크 차콜 텍스트,
+   파스텔 3색(라임·코랄·스카이) 강조. 알약 버튼·보더리스 라운드 카드·
+   바운시 모션(오버슈트 이징)이 정체성. 토큰만 바꾸면 전체 테마가 바뀐다. */
 :root {
-  --bg: #f6f1e7;
-  --surface: #fffdf8;
-  --surface-grad: linear-gradient(180deg, #fffef9 0%, #f9f4ea 100%);
-  --surface-2: #efe8d9;
-  --rail-bg: #eae2d0;
-  --text: #6f6858;
-  --text-h: #322d24;
-  --text-faint: #a89e8a;
-  --chat-text: #3f3a30;
-  --border: #e3d9c4;
-  --border-top: #ece5d3;
-  --border-bright: #cdbf9f;
-  --accent: #e8622c;
-  --accent-bg: rgba(232, 98, 44, 0.1);
-  --accent-border: rgba(232, 98, 44, 0.45);
-  --accent-text: #c14e1a;
-  --accent-2: #d9a13c;
-  --accent-2-bg: rgba(217, 161, 60, 0.16);
-  --accent-2-text: #8a6410;
-  --accent-2-border: rgba(217, 161, 60, 0.5);
-  --danger: #c04b3c;
-  --success: #5d8f57;
-  --hover: rgba(120, 95, 50, 0.06);
-  --presence-off: #d8cdb6;
-  --overlay: rgba(70, 55, 30, 0.35);
-  --focus-ring: rgba(232, 98, 44, 0.16);
-  --shadow: 0 2px 8px rgba(95, 75, 40, 0.08);
-  --shadow-hover: 0 8px 20px rgba(95, 75, 40, 0.13);
-  --glow: radial-gradient(
-    circle,
-    rgba(232, 98, 44, 0.14) 0%,
-    rgba(217, 161, 60, 0.12) 40%,
-    transparent 70%
-  );
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* 팔레트 3색 */
+  --lime: #c7e86b;
+  --coral: #ff8b6a;
+  --sky: #8fc9f0;
+
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-grad: #ffffff;
+  --surface-2: #f4f4f7;
+  --rail-bg: #f4f4f7;
+  --text: #5a5b6a;
+  --text-h: #191a23;
+  --text-faint: #8a8b98;
+  --chat-text: #33343f;
+  --border: #ececf1;
+  --border-top: #ececf1;
+  --border-bright: #d9d9e3;
+  --accent: var(--coral);
+  --accent-bg: rgba(255, 139, 106, 0.18);
+  --accent-border: rgba(255, 139, 106, 0.55);
+  --accent-text: #d1512e;
+  --sky-bg: rgba(143, 201, 240, 0.28);
+  --sky-border: rgba(143, 201, 240, 0.7);
+  --sky-text: #2c6f9e;
+  --accent-2: var(--lime);
+  --accent-2-bg: rgba(199, 232, 107, 0.32);
+  --accent-2-text: #55611f;
+  --accent-2-border: rgba(199, 232, 107, 0.75);
+  --danger: #e0523c;
+  --success: #5d9b57;
+  --hover: rgba(25, 26, 35, 0.05);
+  --presence-off: #d9d9e3;
+  --overlay: rgba(25, 26, 35, 0.4);
+  --focus-ring: rgba(255, 139, 106, 0.25);
+  --shadow: 0 8px 20px rgba(25, 26, 35, 0.1);
+  --shadow-hover: 0 16px 34px rgba(25, 26, 35, 0.16);
+  --glow: none;
+  --ease: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --sans: 'Pretendard Variable', Pretendard, Inter, -apple-system, 'Segoe UI', sans-serif;
+  --display: 'Space Grotesk', 'Pretendard Variable', Pretendard, Inter, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 
   font: 15px/1.6 var(--sans);
@@ -50,6 +54,12 @@
 
 * {
   box-sizing: border-box;
+  /* 스크롤은 유지하되 스크롤바는 숨긴다 — 컬러 블록 미감 유지 */
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
 }
 
 body {
@@ -61,9 +71,9 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--sans);
+  font-family: var(--display);
   color: var(--text-h);
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0;
 }
@@ -86,6 +96,6 @@ input {
 }
 
 ::selection {
-  background: rgba(232, 98, 44, 0.25);
+  background: rgba(255, 139, 106, 0.3);
   color: var(--text-h);
 }

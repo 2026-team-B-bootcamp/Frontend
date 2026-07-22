@@ -5,6 +5,7 @@
  * 그 외에 관심사 태그가 겹치는 멤버에게 AI 아이스브레이커 질문을 붙여넣는 기능도 여기에 있다.
  */
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import { getMembers, type Member } from '../servers/api'
@@ -17,6 +18,9 @@ import type { Subscribe, Typer } from '../../shared/realtime/useChannelSocket'
 
 // 같은 사람이 5분 안에 연달아 보낸 메시지는 Slack처럼 헤더 없이 묶어서 표시
 const GROUP_WINDOW_MS = 5 * 60 * 1000
+
+// 백엔드 list_messages의 limit과 같은 값 — 응답이 이보다 적으면 "더 없음"으로 판정
+const PAGE_SIZE = 50
 
 function timeLabel(iso: string) {
   return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -58,6 +62,10 @@ export function ChatRoom({
   const [ibOpen, setIbOpen] = useState(false)
   const [ibMembers, setIbMembers] = useState<Member[] | null>(null)
   const [ibBusy, setIbBusy] = useState(false)
+  // 아이스브레이커 3단계 상태: 멤버 선택 → 관심사 선택 → 질문 후보 중 선택
+  const [ibTarget, setIbTarget] = useState<Member | null>(null)
+  const [ibSelTags, setIbSelTags] = useState<string[]>([])
+  const [ibQuestions, setIbQuestions] = useState<string[] | null>(null)
 
   const [initialIds, setInitialIds] = useState<Set<number> | null>(null)
   const cursorRef = useRef(0)
@@ -65,6 +73,18 @@ export function ChatRoom({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const lastTypingRef = useRef(0)
   const scrolledOnceRef = useRef(false)
+
+  // --- 무한 스크롤(과거 메시지) 상태 ---
+  // hasMore/loadingOlder는 렌더용 state와 별개로 ref에도 들고 있는다:
+  // IntersectionObserver 콜백이 stale closure를 잡아도 최신 값으로 판단하기 위해서다.
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const hasMoreRef = useRef(true)
+  const loadingOlderRef = useRef(false)
+  const oldestIdRef = useRef<number | null>(null)
+  const prependingRef = useRef(false)
+  const logRef = useRef<HTMLDivElement | null>(null)
+  const topRef = useRef<HTMLDivElement | null>(null)
 
   // 새로 받은 메시지를 기존 목록에 합치는 핵심 함수.
   // 이미 가진 id는 걸러내 중복을 막고(초기 로드 + 실시간 수신이 겹칠 수 있음),
@@ -87,6 +107,11 @@ export function ChatRoom({
         if (active) {
           merge(msgs)
           setInitialIds(new Set(msgs.map((m) => m.id)))
+          // 첫 페이지가 꽉 차지 않았다면 이 채널엔 더 오래된 메시지가 없다
+          if (msgs.length < PAGE_SIZE) {
+            hasMoreRef.current = false
+            setHasMore(false)
+          }
         }
       })
       .catch((err) => {
@@ -114,8 +139,77 @@ export function ChatRoom({
     [subscribe, channelId],
   )
 
+  // 가장 오래된 메시지 id를 ref로 추적 — loadOlder가 stale closure 없이 커서로 쓴다
+  useEffect(() => {
+    oldestIdRef.current = messages[0]?.id ?? null
+  }, [messages])
+
+  // 위로 스크롤해 센티널이 보이면 과거 메시지 한 페이지를 앞에 붙인다.
+  // 핵심은 스크롤 보정: prepend로 늘어난 높이만큼 scrollTop을 되돌려 화면이 튀지 않게 한다.
+  async function loadOlder() {
+    const el = logRef.current
+    const beforeId = oldestIdRef.current
+    if (!el || beforeId == null || loadingOlderRef.current || !hasMoreRef.current) return
+    loadingOlderRef.current = true
+    setLoadingOlder(true)
+    try {
+      const older = await listMessages(channelId, undefined, beforeId)
+      if (older.length < PAGE_SIZE) {
+        hasMoreRef.current = false
+        setHasMore(false)
+      }
+      if (older.length > 0) {
+        // 아래 length-변경 효과(바닥 자동 스크롤)가 이번 갱신을 건너뛰도록 표시
+        prependingRef.current = true
+        const prevHeight = el.scrollHeight
+        // flushSync로 DOM 반영을 동기로 끝낸 직후(페인트 전) scrollTop을 보정한다
+        flushSync(() => {
+          // prepend되는 과거 메시지는 입장 애니메이션 없이 그리도록 initialIds에 편입
+          setInitialIds((prev) => {
+            const next = new Set(prev ?? [])
+            older.forEach((m) => next.add(m.id))
+            return next
+          })
+          setMessages((prev) => {
+            const known = new Set(prev.map((m) => m.id))
+            const fresh = older.filter((m) => !known.has(m.id))
+            return fresh.length ? [...fresh, ...prev] : prev
+          })
+        })
+        el.scrollTop += el.scrollHeight - prevHeight
+      }
+    } catch {
+      // 실패해도 치명적이지 않다 — 스크롤을 다시 움직이면 재시도된다
+    } finally {
+      loadingOlderRef.current = false
+      setLoadingOlder(false)
+    }
+  }
+
+  // 목록 최상단 센티널 감시 — 보이면(위로 120px 여유) 과거 페이지 로드
+  useEffect(() => {
+    const sentinel = topRef.current
+    const root = logRef.current
+    if (!sentinel || !root) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) void loadOlder()
+      },
+      { root, rootMargin: '120px 0px 0px 0px' },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+    // 센티널은 hasMore && 메시지 존재 시에만 렌더되므로, 그 조건이 바뀔 때 다시 붙인다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, messages.length === 0])
+
   useEffect(() => {
     if (messages.length === 0) return
+    if (prependingRef.current) {
+      // 과거 메시지 prepend는 위에서 위치를 보정했으니 바닥으로 끌어내리지 않는다
+      prependingRef.current = false
+      return
+    }
     // 채널에 처음 들어왔을 때는 스크롤 애니메이션 없이 바로 맨 아래로, 이후 새 메시지부터 부드럽게
     bottomRef.current?.scrollIntoView({ behavior: scrolledOnceRef.current ? 'smooth' : 'auto' })
     scrolledOnceRef.current = true
@@ -149,6 +243,34 @@ export function ChatRoom({
     }
   }
 
+  // AI 질문을 타자기처럼 한 글자씩 입력창에 채워넣는다 (originkit Typewriter의
+  // 재귀 setTimeout 상태머신 패턴을 입력창에 맞게 축약 이식)
+  const typeTimer = useRef<number | null>(null)
+  useEffect(
+    () => () => {
+      if (typeTimer.current) clearTimeout(typeTimer.current)
+    },
+    [],
+  )
+
+  function typeIntoDraft(text: string) {
+    if (typeTimer.current) clearTimeout(typeTimer.current)
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDraft(text)
+      return
+    }
+    let i = 0
+    const tick = () => {
+      i++
+      setDraft(text.slice(0, i))
+      if (i < text.length) {
+        typeTimer.current = window.setTimeout(tick, 16 + Math.random() * 28)
+      }
+    }
+    setDraft('')
+    typeTimer.current = window.setTimeout(tick, 120)
+  }
+
   async function toggleIbPicker() {
     if (ibOpen) {
       setIbOpen(false)
@@ -156,6 +278,8 @@ export function ChatRoom({
     }
     setIbOpen(true)
     setIbMembers(null)
+    setIbTarget(null)
+    setIbQuestions(null)
     try {
       setIbMembers(await getMembers(serverId))
     } catch {
@@ -163,14 +287,29 @@ export function ChatRoom({
     }
   }
 
-  // 고른 멤버를 상대로 AI가 만든 첫 질문(아이스브레이커)을 받아와 입력창에 채워준다
-  async function onPickIbTarget(targetId: number) {
+  // 멤버를 고르면 바로 질문을 만들지 않고, 어떤 관심사로 물을지 먼저 고르게 한다
+  function onPickIbTarget(m: Member) {
+    const realTags = m.tags.filter((t) => t && t.trim().length > 0)
+    setIbTarget(m)
+    setIbSelTags([]) // 기본은 미선택 — 물어보고 싶은 관심사만 직접 고르게 한다
+    setIbQuestions(null)
+    // 관심사 태그가 없는 멤버는 고를 게 없으니 바로 일반 질문을 뽑는다
+    if (realTags.length === 0) void generateIbQuestions(m, null)
+  }
+
+  function toggleIbTag(tag: string) {
+    setIbSelTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    )
+  }
+
+  // 고른 관심사로 AI 질문 후보(최대 3개)를 받아온다. 같은 관심사 조합은
+  // 백엔드가 캐시해 두므로 두 번째부터는 LLM 호출 없이 바로 온다.
+  async function generateIbQuestions(target: Member, tags: string[] | null) {
     setIbBusy(true)
     try {
-      const r = await getIcebreaker(serverId, targetId)
-      setDraft(r.question)
-      setIbOpen(false)
-      inputRef.current?.focus()
+      const r = await getIcebreaker(serverId, target.user_id, tags ?? undefined)
+      setIbQuestions(r.questions)
     } catch {
       setError('아이스브레이커 생성에 실패했습니다')
     } finally {
@@ -178,7 +317,15 @@ export function ChatRoom({
     }
   }
 
+  // 후보 중 하나를 고르면 입력창에 타자기처럼 채워넣는다
+  function onPickIbQuestion(question: string) {
+    setIbOpen(false)
+    inputRef.current?.focus()
+    typeIntoDraft(question)
+  }
+
   const ibTargets = ibMembers?.filter((m) => m.user_id !== userId) ?? []
+  const ibTargetTags = ibTarget?.tags.filter((t) => t && t.trim().length > 0) ?? []
   const typingNames = [...typers.entries()]
     .filter(([uid]) => uid !== userId)
     .map(([, t]) => t.name)
@@ -191,7 +338,18 @@ export function ChatRoom({
         </div>
       )}
 
-      <div className="chat-log">
+      <div className="chat-log" ref={logRef}>
+        {/* 무한 스크롤: 더 있으면 감시용 센티널(+로딩 표시), 끝이면 시작 안내 */}
+        {messages.length > 0 &&
+          (hasMore ? (
+            <div ref={topRef} style={{ minHeight: 28, textAlign: 'center' }}>
+              {loadingOlder && <span className="muted">이전 메시지 불러오는 중…</span>}
+            </div>
+          ) : (
+            <div className="chat-day">
+              {channelName ? `#${channelName}` : '이 채널'} 대화의 시작이에요
+            </div>
+          ))}
         {messages.length === 0 ? (
           <div className="chat-empty">
             <span className="chat-empty-hash">#</span>
@@ -283,44 +441,124 @@ export function ChatRoom({
             exit={{ opacity: 0, y: 6 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
           >
-            <div className="ib-popover-title">누구에게 말을 걸까요? AI가 첫 질문을 만들어드려요</div>
-            {ibMembers === null ? (
-              <p className="muted" style={{ padding: '4px 8px' }}>
-                멤버 불러오는 중…
-              </p>
-            ) : ibTargets.length === 0 ? (
-              <p className="muted" style={{ padding: '4px 8px' }}>
-                아직 다른 멤버가 없습니다
-              </p>
+            {ibTarget === null ? (
+              /* 1단계: 누구에게 말을 걸지 멤버 선택 */
+              <>
+                <div className="ib-popover-title">
+                  누구에게 말을 걸까요? AI가 첫 질문을 만들어드려요
+                </div>
+                {ibMembers === null ? (
+                  <p className="muted" style={{ padding: '4px 8px' }}>
+                    멤버 불러오는 중…
+                  </p>
+                ) : ibTargets.length === 0 ? (
+                  <p className="muted" style={{ padding: '4px 8px' }}>
+                    아직 다른 멤버가 없습니다
+                  </p>
+                ) : (
+                  ibTargets.map((m) => (
+                    <button
+                      key={m.user_id}
+                      type="button"
+                      className="ib-target"
+                      disabled={ibBusy}
+                      onClick={() => onPickIbTarget(m)}
+                    >
+                      <span
+                        className="chat-avatar"
+                        style={{ background: avatarColor(m.user_id) }}
+                      >
+                        {m.display_name.charAt(0)}
+                      </span>
+                      <span className="ib-target-name">{m.display_name}</span>
+                      {/* common_with_me: 나와 겹치는 태그 — TagPills가 강조 표시해줌 */}
+                      <TagPills tags={m.tags} common={m.common_with_me} />
+                    </button>
+                  ))
+                )}
+              </>
+            ) : ibQuestions === null ? (
+              /* 2단계: 어떤 관심사에 대해 질문할지 선택 (기본 전체 선택) */
+              <>
+                <div className="ib-popover-title">
+                  {ibTarget.display_name}님의 어떤 관심사로 말을 걸까요?
+                </div>
+                {ibTargetTags.length === 0 ? (
+                  <p className="muted" style={{ padding: '4px 8px' }}>
+                    아직 관심사가 없는 멤버예요 — 일반 질문을 만드는 중…
+                  </p>
+                ) : (
+                  <div className="ib-tag-select">
+                    {ibTargetTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        className={`ib-tag-choice${ibSelTags.includes(tag) ? ' selected' : ''}`}
+                        onClick={() => toggleIbTag(tag)}
+                        disabled={ibBusy}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="ib-actions">
+                  <button
+                    type="button"
+                    className="ib-back"
+                    disabled={ibBusy}
+                    onClick={() => setIbTarget(null)}
+                  >
+                    ← 멤버 다시 고르기
+                  </button>
+                  {ibTargetTags.length > 0 && (
+                    <button
+                      type="button"
+                      className="btn ib-generate"
+                      disabled={ibBusy || ibSelTags.length === 0}
+                      onClick={() => generateIbQuestions(ibTarget, ibSelTags)}
+                    >
+                      {ibBusy ? '질문 만드는 중…' : '질문 만들기'}
+                    </button>
+                  )}
+                </div>
+              </>
             ) : (
-              ibTargets.map((m) => (
-                <button
-                  key={m.user_id}
-                  type="button"
-                  className="ib-target"
-                  disabled={ibBusy}
-                  onClick={() => onPickIbTarget(m.user_id)}
-                >
-                  <span className="chat-avatar" style={{ background: avatarColor(m.user_id) }}>
-                    {m.display_name.charAt(0)}
-                  </span>
-                  <span className="ib-target-name">{m.display_name}</span>
-                  {/* common_with_me: 나와 겹치는 태그 — TagPills가 강조 표시해줌 */}
-                  <TagPills tags={m.tags} common={m.common_with_me} />
-                </button>
-              ))
+              /* 3단계: AI가 만든 질문 후보 중 하나 선택 */
+              <>
+                <div className="ib-popover-title">마음에 드는 질문을 골라 보내보세요</div>
+                {ibQuestions.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    className="ib-question"
+                    onClick={() => onPickIbQuestion(q)}
+                  >
+                    {q}
+                  </button>
+                ))}
+                <div className="ib-actions">
+                  <button
+                    type="button"
+                    className="ib-back"
+                    onClick={() => setIbQuestions(null)}
+                  >
+                    ← 관심사 다시 고르기
+                  </button>
+                </div>
+              </>
             )}
           </motion.div>
         )}
         </AnimatePresence>
         <button
           type="button"
-          className={`icon-btn${ibOpen ? ' active' : ''}`}
+          className={`icon-btn ib-spark-btn${ibOpen ? ' active' : ''}`}
           onClick={toggleIbPicker}
           disabled={ibBusy}
           title="AI 아이스브레이커"
         >
-          <SparkIcon />
+          <SparkIcon size={22} />
         </button>
         <input
           ref={inputRef}

@@ -46,14 +46,22 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   )
 }
 
-/** 헤드라인 단어별 스태거 리빌 */
-function RevealWords({ text, delay = 0 }: { text: string; delay?: number }) {
+/** 헤드라인 단어별 스태거 리빌 — hl로 특정 단어에 컬러 하이라이트(배경 칠) */
+function RevealWords({
+  text,
+  delay = 0,
+  hl = {},
+}: {
+  text: string
+  delay?: number
+  hl?: Record<number, 'lime' | 'coral' | 'sky'>
+}) {
   return (
     <span className="reveal-line">
       {text.split(' ').map((word, i) => (
         <motion.span
           key={i}
-          className="reveal-word"
+          className={`reveal-word${hl[i] ? ` hl hl-${hl[i]}` : ''}`}
           initial={{ opacity: 0, y: '0.6em' }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: delay + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
@@ -359,7 +367,7 @@ export function LandingPage() {
           <h1>
             <RevealWords text="처음 만나도," delay={0.1} />
             <br />
-            <RevealWords text="금세 친해지는 채팅" delay={0.3} />
+            <RevealWords text="금세 친해지는 채팅" delay={0.3} hl={{ 1: 'lime' }} />
           </h1>
           <motion.p
             className="landing-sub"
@@ -393,12 +401,16 @@ export function LandingPage() {
           </motion.div>
         </motion.div>
 
+      </section>
+
+      {/* ---------- 코랄 곡면 밴드: 미리보기 카드 ---------- */}
+      <section className="hero-band band">
         <motion.div
           className="landing-preview card"
           style={{ y: previewY }}
           initial={{ opacity: 0, y: 40, rotateX: 16 }}
           animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.7, delay: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
         >
           <MockChat />
         </motion.div>
@@ -498,11 +510,12 @@ export function LandingPage() {
 
       {/* ---------- 빅 타이포 (스크롤 좌우 이동) ---------- */}
       <section ref={bigRef} className="bigtype">
+        {/* 문구를 반복해 양끝이 뷰포트 밖으로 흐르는 티커처럼 보이게 한다 */}
         <motion.div className="bigtype-line" style={{ x: bigX1 }}>
-          어색함 없이 · 빠르게 · 함께 ·
+          {'어색함 없이 · 빠르게 · 함께 · '.repeat(3)}
         </motion.div>
         <motion.div className="bigtype-line accent" style={{ x: bigX2 }}>
-          태그로 잇다 · 질문으로 잇다 · 게임으로 잇다 ·
+          {'태그로 잇다 · 질문으로 잇다 · 게임으로 잇다 · '.repeat(3)}
         </motion.div>
       </section>
 
@@ -537,7 +550,8 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ---------- 마지막 CTA (폭죽) ---------- */}
+      {/* ---------- 라임 곡면 밴드: 마지막 CTA(폭죽) + 푸터 ---------- */}
+      <div className="footer-band band">
       <section className="landing-final">
         <motion.h2
           initial={{ opacity: 0, y: 14 }}
@@ -577,6 +591,7 @@ export function LandingPage() {
         <span className="landing-logo">이음</span>
         <span>관심사 태그로 라포를 만드는 채팅 서비스</span>
       </footer>
+      </div>
     </div>
   )
 }

@@ -1,10 +1,11 @@
 /* 우측 사이드 패널 — 멤버/게임 탭, 프레즌스 */
 
+/* 우측 패널 — 슬랙식 화이트 콘텐츠 면, 색은 탭·카드 포인트로만 */
 .side-panel {
   width: 340px;
   flex-shrink: 0;
   border-left: 1px solid var(--border);
-  background: var(--surface-2);
+  background: #fff;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -12,32 +13,39 @@
 
 .panel-tabs {
   display: flex;
-  gap: 4px;
-  padding: 10px 10px 0;
+  gap: 6px;
+  padding: 12px 12px 10px;
   border-bottom: 1px solid var(--border);
 }
 
 .panel-tab {
   flex: 1;
   border: none;
-  background: none;
-  padding: 8px 6px 10px;
+  background: var(--surface-2);
+  padding: 7px 6px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
-  border-bottom: 2px solid transparent;
-  border-radius: 6px 6px 0 0;
-  transition: color 180ms var(--ease);
+  border-radius: 999px;
+  transition: color 260ms var(--ease), background 260ms var(--ease), transform 260ms var(--ease);
 }
 
 .panel-tab:hover {
-  background: var(--hover);
+  color: var(--text-h);
+  transform: scale(1.03);
+}
+
+/* 활성 탭 — 역할색 솔리드 알약: 멤버(라포) = 코랄, 미니게임 = 라임 */
+.panel-tab.active {
   color: var(--text-h);
 }
 
-.panel-tab.active {
-  color: var(--accent-text);
-  border-bottom-color: var(--accent);
+.panel-tab:nth-child(1).active {
+  background: var(--coral);
+}
+
+.panel-tab:nth-child(2).active {
+  background: var(--lime);
 }
 
 .panel-body {
@@ -63,23 +71,21 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  padding: 10px 6px 8px;
-  border-radius: 12px;
-  transition: transform 180ms var(--ease), border-color 180ms var(--ease), background 180ms var(--ease), box-shadow 180ms var(--ease);
+  border: none;
+  background: var(--surface-2);
+  padding: 12px 6px 10px;
+  border-radius: 18px;
+  transition: transform 260ms var(--ease), background 260ms var(--ease), box-shadow 260ms var(--ease);
 }
 
 .game-select-card:hover {
-  border-color: var(--border-bright);
-  transform: translateY(-1px);
+  transform: translateY(-3px) rotate(-1deg);
   box-shadow: var(--shadow);
 }
 
 .game-select-card.active {
-  border-color: var(--accent);
-  background: var(--accent-bg);
-  box-shadow: 0 0 0 1px var(--accent) inset;
+  background: var(--accent-2-bg);
+  box-shadow: 0 0 0 2.5px var(--lime) inset;
 }
 
 .game-preview-svg {
@@ -104,7 +110,7 @@
 }
 
 .game-select-card.active .game-select-label {
-  color: var(--accent-text);
+  color: var(--text-h);
 }
 
 .panel-title {
@@ -141,8 +147,9 @@
   border-radius: 10px;
 }
 
+/* 멤버 행 — 라포 영역이므로 코랄 틴트 호버 */
 .member-row:hover {
-  background: var(--hover);
+  background: var(--accent-bg);
 }
 
 .member-row .chat-avatar {
@@ -160,7 +167,7 @@
   position: absolute;
   right: -2px;
   bottom: -2px;
-  border: 2px solid var(--surface-2);
+  border: 2px solid #fff;
   width: 11px;
   height: 11px;
 }
@@ -204,7 +211,7 @@
 
 .presence-dot.on {
   background: var(--success);
-  box-shadow: 0 0 0 2px rgba(93, 143, 87, 0.25);
+  box-shadow: 0 0 0 2px rgba(93, 155, 87, 0.25);
 }
 
 @media (max-width: 900px) {

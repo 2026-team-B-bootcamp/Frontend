@@ -30,6 +30,14 @@ export function LoginPage() {
 
   return (
     <div className="center-screen">
+      {/* 장식용 떠다니는 태그 필 — 크기·회전·간격을 흩뜨려 의도적으로 비대칭 배치 */}
+      <span className="auth-pill lg" style={{ left: '6%', top: '21%', rotate: '-7deg' }}>커피</span>
+      <span className="auth-pill sm" style={{ left: '19%', top: '8%', rotate: '4deg' }}>축구</span>
+      <span className="auth-pill lime" style={{ right: '26%', top: '11%', rotate: '-4deg' }}>등산</span>
+      <span className="auth-pill sm sky" style={{ right: '5%', top: '31%', rotate: '6deg' }}>재즈</span>
+      <span className="auth-pill coral" style={{ left: '14%', bottom: '36%', rotate: '5deg' }}>보드게임</span>
+      <span className="auth-pill lg" style={{ right: '11%', bottom: '22%', rotate: '-5deg' }}>여행</span>
+      <span className="auth-pill sm" style={{ left: '30%', bottom: '8%', rotate: '3deg' }}>캠핑</span>
       <div className="card auth-box">
         <h1>로그인</h1>
         <p className="muted" style={{ marginBottom: 20 }}>
