@@ -80,11 +80,29 @@ export function CopyIcon({ size = 14 }: { size?: number }) {
   )
 }
 
+// AI 기능 전용 아이콘 — 다른 아이콘들과 달리 Gemini풍 보라→파랑 그라디언트
+// 4각 별(fill) 형태를 쓴다. "이건 AI 기능"이라는 시각 신호를 통일하기 위함.
 export function SparkIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg {...base(size)}>
-      <path d="M12 4v4M12 16v4M4 12h4M16 12h4" />
-      <path d="M7.5 7.5l2 2M14.5 14.5l2 2M16.5 7.5l-2 2M9.5 14.5l-2 2" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient
+          id="ai-spark-grad"
+          x1="2"
+          y1="2"
+          x2="22"
+          y2="22"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0" stopColor="#9168C0" />
+          <stop offset="0.55" stopColor="#5684D1" />
+          <stop offset="1" stopColor="#1BA1E3" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M12 1.5C12.65 7.4 15.5 10.55 22.5 12C15.5 13.45 12.65 16.6 12 22.5C11.35 16.6 8.5 13.45 1.5 12C8.5 10.55 11.35 7.4 12 1.5Z"
+        fill="url(#ai-spark-grad)"
+      />
     </svg>
   )
 }

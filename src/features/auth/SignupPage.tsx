@@ -31,6 +31,13 @@ export function SignupPage() {
 
   return (
     <div className="center-screen">
+      {/* 장식용 떠다니는 태그 필 — 로그인과 같은 문법, 비대칭 배치 */}
+      <span className="auth-pill sm" style={{ left: '8%', top: '10%', rotate: '5deg' }}>캠핑</span>
+      <span className="auth-pill lg" style={{ left: '22%', top: '23%', rotate: '-4deg' }}>독서</span>
+      <span className="auth-pill sky" style={{ right: '7%', top: '17%', rotate: '6deg' }}>러닝</span>
+      <span className="auth-pill lime sm" style={{ right: '20%', top: '40%', rotate: '-6deg' }}>요리</span>
+      <span className="auth-pill coral" style={{ left: '10%', bottom: '28%', rotate: '4deg' }}>사진</span>
+      <span className="auth-pill lg" style={{ right: '13%', bottom: '11%', rotate: '-3deg' }}>헬스</span>
       <div className="card auth-box">
         <h1>회원가입</h1>
         <p className="muted" style={{ marginBottom: 20 }}>

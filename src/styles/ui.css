@@ -29,23 +29,21 @@
   color: var(--text);
 }
 
-/* 벤토 타일 — 인너 그라디언트 + 1px 발광 보더 + 상단 림 라이트 */
+/* 보더리스 라운드 카드 — 색 면과 그림자로만 구분 */
 .card {
-  background: var(--surface-grad);
-  border: 1px solid var(--border);
-  border-top-color: var(--border-top);
-  border-radius: 16px;
+  background: var(--surface);
+  border: none;
+  border-radius: 24px;
   padding: 20px;
   box-shadow: var(--shadow);
   margin-bottom: 16px;
   transition:
-    border-color 180ms var(--ease),
-    box-shadow 180ms var(--ease),
-    transform 180ms var(--ease);
+    box-shadow 260ms var(--ease),
+    transform 260ms var(--ease);
 }
 
 .card:hover {
-  border-color: var(--border-bright);
+  box-shadow: var(--shadow-hover);
 }
 
 .card h2,
@@ -55,13 +53,13 @@
 }
 
 .input {
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 14px;
   background: var(--surface-2);
   color: var(--text-h);
   width: 100%;
-  transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease);
+  transition: border-color 260ms var(--ease), box-shadow 260ms var(--ease);
 }
 
 .input::placeholder {
@@ -74,49 +72,51 @@
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-/* 1차 CTA만 주황 그라디언트 (강조 그라디언트는 버튼 한정) */
+/* 1차 CTA — 잉크 차콜 알약 버튼, 바운시 스케일 호버 */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 16px;
-  border-radius: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
   border: none;
-  background: linear-gradient(120deg, #f0813a 0%, #e8622c 55%, #d94e12 130%);
+  background: var(--text-h);
   color: #fff;
   font-weight: 600;
-  transition: transform 180ms var(--ease), filter 180ms var(--ease);
+  box-shadow: var(--shadow);
+  transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
 }
 
 .btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
+  transform: scale(1.04);
+  box-shadow: var(--shadow-hover);
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-  filter: none;
+  box-shadow: none;
 }
 
 .btn.secondary,
 .btn.ghost {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border: none;
   color: var(--text-h);
   font-weight: 500;
+  box-shadow: none;
 }
 
 .btn.secondary:hover,
 .btn.ghost:hover {
-  border-color: var(--border-bright);
-  filter: none;
+  background: var(--border);
+  box-shadow: none;
 }
 
 .btn.small {
-  padding: 6px 10px;
+  padding: 6px 12px;
   font-size: 13px;
 }
 
@@ -127,19 +127,55 @@
 }
 
 .pill {
-  padding: 3px 10px;
+  padding: 3px 11px;
   border-radius: 999px;
   font-size: 13px;
-  border: 1px solid var(--border);
+  border: none;
   background: var(--surface-2);
-  color: var(--text);
+  color: var(--text-h);
+  font-weight: 500;
+  /* 얇은 흰 링 — 같은 색 배경 위에서도 칩이 사라지지 않게 */
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9);
 }
 
+/* 겹치는 태그 — 외곽선 없이 굵은 글씨 + 반짝이는 sheen 스윕만으로 "이 태그로 통한다"를 표현
+   (originkit Shiny Pill의 스위핑 마스크 기법을 CSS ::after로 이식) */
 .pill.common {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
-  color: var(--accent-text);
-  font-weight: 600;
+  font-weight: 700;
+  position: relative;
+  overflow: hidden;
+}
+
+.pill.common::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 68%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: pill-sheen 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pill-sheen {
+  0% {
+    background-position: 180% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill.common::after {
+    animation: none;
+    display: none;
+  }
 }
 
 .invite-code {
@@ -161,14 +197,14 @@
 }
 
 .banner.win {
-  background: var(--accent-2-bg);
-  border: 1px solid var(--accent-2-border);
-  color: var(--accent-2-text);
+  background: var(--lime);
+  border: none;
+  color: var(--text-h);
 }
 
 .banner.lose {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #fff;
+  border: none;
   color: var(--text-h);
 }
 
@@ -184,11 +220,10 @@
 }
 
 .modal {
-  background: var(--surface-grad);
-  border: 1px solid var(--border);
-  border-top-color: var(--border-top);
-  border-radius: 16px;
-  padding: 20px;
+  background: var(--surface);
+  border: none;
+  border-radius: 24px;
+  padding: 24px;
   width: 100%;
   max-width: 380px;
   box-shadow: var(--shadow-hover);

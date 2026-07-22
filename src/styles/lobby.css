@@ -1,4 +1,5 @@
-/* 인증 + 온보딩 화면 — 중앙 카드, 상단 라디얼 글로우 */
+/* 인증 + 온보딩 화면 — 코랄/스카이 곡면 컬러 블록 사이에 떠 있는 흰 카드,
+   떠다니는 태그 필로 서비스 정체성을 로그인 화면에서부터 보여준다 */
 
 .center-screen {
   min-height: 100svh;
@@ -7,30 +8,117 @@
   padding: 20px;
   position: relative;
   isolation: isolate;
+  overflow: hidden;
+  background: var(--bg);
 }
 
+/* 상단 코랄 곡면 블록 */
 .center-screen::before {
   content: '';
   position: absolute;
-  top: -80px;
-  left: 50%;
-  translate: -50% 0;
-  width: 680px;
-  height: 460px;
-  background: var(--glow);
-  filter: blur(40px);
+  top: 0;
+  left: -10%;
+  width: 120%;
+  height: 36%;
+  background: var(--coral);
+  border-radius: 0 0 58% 42% / 0 0 130px 90px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 하단 스카이 곡면 블록 */
+.center-screen::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -10%;
+  width: 120%;
+  height: 28%;
+  background: var(--sky);
+  border-radius: 46% 54% 0 0 / 100px 130px 0 0;
   pointer-events: none;
   z-index: -1;
 }
 
 .auth-box {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  box-shadow: var(--shadow-hover);
+  padding: 28px;
 }
 
 .auth-box h1 {
-  font-size: 24px;
+  font-size: 30px;
   margin-bottom: 6px;
+}
+
+/* 떠다니는 태그 필 — 흰 필은 컬러 블록 위, 컬러 필은 흰 여백 위에 배치 */
+.auth-pill {
+  position: absolute;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: auth-bob 5.4s ease-in-out infinite alternate;
+}
+
+.auth-pill.lime {
+  background: var(--lime);
+}
+
+.auth-pill.coral {
+  background: var(--coral);
+}
+
+.auth-pill.sky {
+  background: var(--sky);
+}
+
+.auth-pill.lg {
+  font-size: 15px;
+  padding: 8px 20px;
+}
+
+.auth-pill.sm {
+  font-size: 11px;
+  padding: 4px 12px;
+}
+
+/* 봉우리 타이밍을 어긋나게 — 규칙성 제거 */
+.auth-pill:nth-of-type(2n) {
+  animation-duration: 6.4s;
+  animation-delay: 0.7s;
+}
+
+.auth-pill:nth-of-type(3n) {
+  animation-duration: 4.6s;
+  animation-delay: 1.3s;
+}
+
+@keyframes auth-bob {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: translateY(-26px);
+  }
+}
+
+@media (max-width: 760px) {
+  .auth-pill {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-pill {
+    animation: none;
+  }
 }
 
 /* ---------- 온보딩 (참여한 서버가 없을 때) ---------- */

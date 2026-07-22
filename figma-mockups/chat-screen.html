@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440" />
+<title>이음 — 채팅 화면 (Figma import mockup)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+/* ===== tokens.css — 이리데센트 팩: 화이트 캔버스 + 잉크 차콜 + 파스텔 3색 ===== */
+:root {
+  --lime: #c7e86b;
+  --coral: #ff8b6a;
+  --sky: #8fc9f0;
+
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f4f4f7;
+  --text: #5a5b6a;
+  --text-h: #191a23;
+  --text-faint: #8a8b98;
+  --chat-text: #33343f;
+  --border: #ececf1;
+  --accent: var(--coral);
+  --accent-bg: rgba(255, 139, 106, 0.18);
+  --danger: #e0523c;
+  --success: #5d9b57;
+  --hover: rgba(25, 26, 35, 0.05);
+  --presence-off: #d9d9e3;
+  --shadow: 0 8px 20px rgba(25, 26, 35, 0.1);
+  --shadow-hover: 0 16px 34px rgba(25, 26, 35, 0.16);
+
+  --sans: 'Pretendard Variable', Pretendard, Inter, -apple-system, 'Segoe UI', sans-serif;
+  --display: 'Space Grotesk', 'Pretendard Variable', Pretendard, Inter, sans-serif;
+
+  font: 15px/1.6 var(--sans);
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+
+html, body { margin: 0; padding: 0; }
+body {
+  width: 1440px;
+  height: 900px;
+  overflow: hidden;
+  background: var(--bg);
+  font: 15px/1.6 var(--sans);
+  color: var(--text);
+}
+
+button { font: inherit; cursor: pointer; }
+input { font: inherit; }
+
+.muted { color: var(--text); font-size: 14px; }
+
+/* ===== chat.css — 앱 셸 ===== */
+.app-shell { display: flex; height: 900px; overflow: hidden; }
+
+/* ---------- 서버 레일 ---------- */
+.server-rail {
+  width: 68px;
+  flex-shrink: 0;
+  background: #5fa8dd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 8px;
+}
+
+.rail-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  width: 100%;
+  padding: 0 0 8px;
+}
+
+.rail-item {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 17px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.rail-item.active { border-radius: 16px; box-shadow: 0 0 0 3px #fff; }
+
+.rail-pill {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--text-h);
+}
+
+.rail-add {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: var(--surface);
+  color: var(--text-h);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: var(--shadow);
+}
+
+/* ---------- 채널 사이드바 ---------- */
+.chat-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--sky);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+}
+
+.sidebar-head {
+  padding: 8px 10px 14px;
+  border-bottom: 1px solid rgba(25, 26, 35, 0.14);
+  margin-bottom: 10px;
+}
+
+.sidebar-server-name {
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invite-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 2px 6px;
+  border: none;
+  background: none;
+  color: rgba(25, 26, 35, 0.72);
+  font-size: 12px;
+  border-radius: 999px;
+}
+
+.sidebar-section {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(25, 26, 35, 0.55);
+}
+
+.sidebar-channels {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.sidebar-channel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: rgba(25, 26, 35, 0.72);
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.sidebar-channel .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-channel .hash { opacity: 0.55; }
+
+.sidebar-channel.active {
+  background: #fff;
+  color: var(--text-h);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
+.sidebar-channel.active .hash { opacity: 0.7; }
+
+.channel-add { margin-top: 8px; padding: 0 4px; }
+
+.channel-add .input {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.sidebar-me {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid rgba(25, 26, 35, 0.14);
+  color: var(--text-h);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sidebar-me-actions { display: flex; gap: 10px; }
+
+.sidebar-me button {
+  border: none;
+  background: none;
+  color: rgba(25, 26, 35, 0.65);
+  font-size: 12px;
+  padding: 0;
+}
+
+/* ---------- 채팅 메인 ---------- */
+.chat-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chat-channel-name {
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+}
+
+.chat-header-links {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.online-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text);
+  margin-right: 4px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 16px;
+  color: var(--text-h);
+  text-decoration: none;
+  line-height: 1;
+}
+
+.icon-btn.active { background: var(--sky); color: var(--text-h); }
+
+.chat-log { flex: 1; overflow-y: auto; padding: 12px 0; }
+
+.chat-day {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 16px 8px;
+  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chat-day::before,
+.chat-day::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+
+.chat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 16px;
+}
+
+.chat-row.grouped { padding-top: 3px; padding-bottom: 3px; }
+
+.chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.chat-gutter {
+  width: 36px;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-faint);
+  text-align: center;
+  padding-top: 4px;
+  opacity: 0;
+}
+
+.chat-body { flex: 1; min-width: 0; }
+
+.chat-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chat-name { font-weight: 600; font-size: 15px; color: var(--text-h); }
+
+.chat-head .pills { gap: 4px; }
+.chat-head .pill { padding: 0 8px; font-size: 11px; }
+
+.chat-time { font-size: 11px; color: var(--text-faint); }
+
+.chat-text {
+  color: var(--chat-text);
+  font-size: 15px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---------- 입력 + 타이핑 ---------- */
+.typing-bar {
+  min-height: 20px;
+  padding: 0 22px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.typing-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.typing-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.chat-input {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 6px 6px 6px 12px;
+  box-shadow: var(--shadow);
+  margin: 8px 16px 16px;
+}
+
+.chat-input .input {
+  flex: 1;
+  border: none;
+  background: transparent;
+}
+
+.input {
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text-h);
+  width: 100%;
+}
+
+.input::placeholder { color: var(--text-faint); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  background: var(--text-h);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
+/* ===== ui.css — 태그 필 ===== */
+.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.pill {
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: none;
+  background: var(--surface-2);
+  color: var(--text-h);
+  font-weight: 500;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9);
+}
+
+.pill.common { font-weight: 700; }
+
+/* ===== panel.css — 우측 멤버/미니게임 패널 ===== */
+.side-panel {
+  width: 340px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-tab {
+  flex: 1;
+  border: none;
+  background: var(--surface-2);
+  padding: 7px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  border-radius: 999px;
+}
+
+.panel-tab.active { color: var(--text-h); }
+.panel-tab:nth-child(1).active { background: var(--coral); }
+.panel-tab:nth-child(2).active { background: var(--lime); }
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px;
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0 6px;
+  margin-bottom: 10px;
+}
+
+.member-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 6px;
+  border-radius: 10px;
+}
+
+.member-row .chat-avatar { width: 32px; height: 32px; font-size: 14px; }
+
+.member-avatar-wrap { position: relative; flex-shrink: 0; }
+
+.member-avatar-wrap .presence-dot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid #fff;
+  width: 11px;
+  height: 11px;
+}
+
+.member-info { flex: 1; min-width: 0; }
+
+.member-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.member-name .muted { font-size: 12px; }
+
+.member-info .pills { margin-top: 4px; gap: 4px; }
+.member-info .pill { padding: 0 8px; font-size: 11px; }
+
+.presence-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--presence-off);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.presence-dot.on {
+  background: var(--success);
+  box-shadow: 0 0 0 2px rgba(93, 155, 87, 0.25);
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- 서버 레일 -->
+  <nav class="server-rail">
+    <div class="rail-list">
+      <button class="rail-item" style="background:#e8623c" title="시흥 러닝크루">시</button>
+      <button class="rail-item" style="background:#7ca32e" title="북클럽">북</button>
+      <button class="rail-item active" style="background:#2f7db5" title="이음 2기">
+        <span class="rail-pill"></span>이
+      </button>
+    </div>
+    <button class="rail-add" title="서버 추가">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </nav>
+
+  <!-- 채널 사이드바 -->
+  <aside class="chat-sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-server-name">이음 · 시흥 2기 모임</div>
+      <button class="invite-chip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.8 13 4.8a3.4 3.4 0 0 1 4.8 0l1.4 1.4a3.4 3.4 0 0 1 0 4.8l-2 2"/><path d="M13 17.2 11 19.2a3.4 3.4 0 0 1-4.8 0l-1.4-1.4a3.4 3.4 0 0 1 0-4.8l2-2"/></svg>
+        초대 코드 복사
+      </button>
+    </div>
+
+    <div class="sidebar-section">채널</div>
+    <div class="sidebar-channels">
+      <a class="sidebar-channel active" href="#"><span class="hash">#</span><span class="name">일반</span></a>
+      <a class="sidebar-channel" href="#"><span class="hash">#</span><span class="name">자기소개</span></a>
+      <a class="sidebar-channel" href="#"><span class="hash">#</span><span class="name">관심사-수다</span></a>
+      <a class="sidebar-channel" href="#"><span class="hash">#</span><span class="name">모임-공지</span></a>
+    </div>
+
+    <div class="channel-add">
+      <input class="input" placeholder="+ 채널 추가" />
+    </div>
+
+    <div class="sidebar-me">
+      <span>준제</span>
+      <div class="sidebar-me-actions">
+        <button>프로필</button>
+        <button>로그아웃</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 채팅 메인 -->
+  <main class="chat-main">
+    <header class="chat-header">
+      <span class="chat-channel-name"># 일반</span>
+      <div class="chat-header-links">
+        <span class="online-count"><span class="presence-dot on"></span> 4</span>
+        <button class="icon-btn active" title="멤버">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3.5 20c.6-3.4 2.8-5.5 5.5-5.5s4.9 2.1 5.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.8 14.9c2.2.4 4 2.1 4.6 5.1"/></svg>
+        </button>
+        <button class="icon-btn" title="미니게임">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1" fill="currentColor" stroke="none"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="chat-log">
+      <div class="chat-day">7월 21일 월요일</div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#5fa8dd">하</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#5fa8dd">하늘</span>
+            <div class="pills">
+              <span class="pill" style="background:#8fc9f0;color:#191a23">러닝</span>
+              <span class="pill" style="background:#8fc9f0;color:#191a23">커피</span>
+            </div>
+            <span class="chat-time">오전 10:12</span>
+          </div>
+          <div class="chat-text">다들 주말 잘 보내셨나요? 저는 어제 오이도까지 러닝 다녀왔어요 🏃</div>
+        </div>
+      </div>
+
+      <div class="chat-row grouped">
+        <span class="chat-gutter">오전 10:13</span>
+        <div class="chat-body">
+          <div class="chat-text">날씨가 좋아서 그런지 사람이 진짜 많더라구요</div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#e8623c">민</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#e8623c">민준</span>
+            <div class="pills">
+              <span class="pill" style="background:#ff8b6a;color:#191a23">게임</span>
+              <span class="pill" style="background:#c7e86b;color:#191a23">등산</span>
+            </div>
+            <span class="chat-time">오전 10:21</span>
+          </div>
+          <div class="chat-text">오이도 좋죠! 다음에는 같이 가요. 저는 이번 주말에 소래산 등산 계획 중인데 관심 있으신 분?</div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#7ca32e">서</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#7ca32e">서연</span>
+            <div class="pills">
+              <span class="pill common" style="background:#c7e86b;color:#191a23">여행</span>
+              <span class="pill" style="background:#8fc9f0;color:#191a23">사진</span>
+            </div>
+            <span class="chat-time">오전 10:24</span>
+          </div>
+          <div class="chat-text">저요! 카메라 들고 따라가겠습니다 📷 정상에서 보는 시흥 뷰가 그렇게 좋다던데</div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#f07d55">준</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#f07d55">준제</span>
+            <div class="pills">
+              <span class="pill common" style="background:#c7e86b;color:#191a23">여행</span>
+              <span class="pill" style="background:#8fc9f0;color:#191a23">커피</span>
+            </div>
+            <span class="chat-time">오전 10:26</span>
+          </div>
+          <div class="chat-text">등산 끝나고 근처 카페 투어까지 하면 완벽할 것 같은데요 ☕</div>
+        </div>
+      </div>
+
+      <div class="chat-row grouped">
+        <span class="chat-gutter">오전 10:26</span>
+        <div class="chat-body">
+          <div class="chat-text">토요일 오전 9시 어떠세요?</div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#e8623c">민</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#e8623c">민준</span>
+            <div class="pills">
+              <span class="pill" style="background:#ff8b6a;color:#191a23">게임</span>
+              <span class="pill" style="background:#c7e86b;color:#191a23">등산</span>
+            </div>
+            <span class="chat-time">오전 10:31</span>
+          </div>
+          <div class="chat-text">좋아요, 토요일 9시 확정! 자세한 내용은 #모임-공지 에 올려둘게요</div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#93b83d">지</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#93b83d">지우</span>
+            <div class="pills">
+              <span class="pill" style="background:#c7e86b;color:#191a23">독서</span>
+              <span class="pill" style="background:#8fc9f0;color:#191a23">영화</span>
+            </div>
+            <span class="chat-time">오전 10:42</span>
+          </div>
+          <div class="chat-text">아쉽지만 저는 이번 주말은 선약이 있어서… 다음 등산 때는 꼭 껴주세요!</div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#5fa8dd">하</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#5fa8dd">하늘</span>
+            <div class="pills">
+              <span class="pill" style="background:#8fc9f0;color:#191a23">러닝</span>
+              <span class="pill" style="background:#8fc9f0;color:#191a23">커피</span>
+            </div>
+            <span class="chat-time">오전 11:05</span>
+          </div>
+          <div class="chat-text">그럼 지우님이랑은 다른 걸로 친해져야겠네요. AI 아이스브레이커한테 질문 하나 뽑아달라고 했어요 ㅋㅋ</div>
+        </div>
+      </div>
+
+      <div class="chat-row grouped">
+        <span class="chat-gutter">오전 11:05</span>
+        <div class="chat-body">
+          <div class="chat-text">지우님, 최근에 읽은 책 중에 "이건 꼭 영화로 만들어졌으면" 싶은 작품이 있나요?</div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#93b83d">지</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#93b83d">지우</span>
+            <div class="pills">
+              <span class="pill" style="background:#c7e86b;color:#191a23">독서</span>
+              <span class="pill" style="background:#8fc9f0;color:#191a23">영화</span>
+            </div>
+            <span class="chat-time">오전 11:08</span>
+          </div>
+          <div class="chat-text">오 좋은 질문이네요. 저는 「구의 증명」이요. 잔잔한데 여운이 길어서 영상으로 보고 싶어요</div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="chat-avatar" style="background:#7ca32e">서</div>
+        <div class="chat-body">
+          <div class="chat-head">
+            <span class="chat-name" style="color:#7ca32e">서연</span>
+            <div class="pills">
+              <span class="pill common" style="background:#c7e86b;color:#191a23">여행</span>
+              <span class="pill" style="background:#8fc9f0;color:#191a23">사진</span>
+            </div>
+            <span class="chat-time">오전 11:12</span>
+          </div>
+          <div class="chat-text">저도 그 책 읽었어요! 다음 정기 모임에서 책 얘기도 같이 해요 📚</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="typing-bar">
+      <span>
+        <span class="typing-dots"><i></i><i></i><i></i></span>
+        서연님이 입력 중…
+      </span>
+    </div>
+
+    <form class="chat-input">
+      <button type="button" class="icon-btn" title="AI 아이스브레이커">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v4M12 16v4M4 12h4M16 12h4"/><path d="M7.5 7.5l2 2M14.5 14.5l2 2M16.5 7.5l-2 2M9.5 14.5l-2 2"/></svg>
+      </button>
+      <input class="input" placeholder="#일반 에 메시지 보내기" />
+      <button class="btn" type="button">전송</button>
+    </form>
+  </main>
+
+  <!-- 우측 멤버 패널 -->
+  <aside class="side-panel">
+    <div class="panel-tabs">
+      <button class="panel-tab active">멤버</button>
+      <button class="panel-tab">미니게임</button>
+    </div>
+    <div class="panel-body">
+      <div class="panel-title">멤버 — 5</div>
+
+      <div class="member-row">
+        <div class="member-avatar-wrap">
+          <div class="chat-avatar" style="background:#f07d55">준</div>
+          <span class="presence-dot on"></span>
+        </div>
+        <div class="member-info">
+          <div class="member-name">준제 <span class="muted">(나)</span></div>
+          <div class="pills">
+            <span class="pill common" style="background:#c7e86b;color:#191a23">여행</span>
+            <span class="pill" style="background:#8fc9f0;color:#191a23">커피</span>
+            <span class="pill" style="background:#ff8b6a;color:#191a23">음악</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="member-row">
+        <div class="member-avatar-wrap">
+          <div class="chat-avatar" style="background:#5fa8dd">하</div>
+          <span class="presence-dot on"></span>
+        </div>
+        <div class="member-info">
+          <div class="member-name">하늘</div>
+          <div class="pills">
+            <span class="pill" style="background:#8fc9f0;color:#191a23">러닝</span>
+            <span class="pill" style="background:#8fc9f0;color:#191a23">커피</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="member-row">
+        <div class="member-avatar-wrap">
+          <div class="chat-avatar" style="background:#7ca32e">서</div>
+          <span class="presence-dot on"></span>
+        </div>
+        <div class="member-info">
+          <div class="member-name">서연</div>
+          <div class="pills">
+            <span class="pill common" style="background:#c7e86b;color:#191a23">여행</span>
+            <span class="pill" style="background:#8fc9f0;color:#191a23">사진</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="member-row">
+        <div class="member-avatar-wrap">
+          <div class="chat-avatar" style="background:#e8623c">민</div>
+          <span class="presence-dot on"></span>
+        </div>
+        <div class="member-info">
+          <div class="member-name">민준</div>
+          <div class="pills">
+            <span class="pill" style="background:#ff8b6a;color:#191a23">게임</span>
+            <span class="pill" style="background:#c7e86b;color:#191a23">등산</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="member-row">
+        <div class="member-avatar-wrap">
+          <div class="chat-avatar" style="background:#93b83d">지</div>
+          <span class="presence-dot"></span>
+        </div>
+        <div class="member-info">
+          <div class="member-name">지우</div>
+          <div class="pills">
+            <span class="pill" style="background:#c7e86b;color:#191a23">독서</span>
+            <span class="pill" style="background:#8fc9f0;color:#191a23">영화</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+</body>
+</html>

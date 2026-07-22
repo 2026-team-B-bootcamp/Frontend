@@ -30,6 +30,16 @@ export function MembersPanel({ serverId, online }: { serverId: number; online: S
     }
   }, [serverId])
 
+  // 내 태그 중 다른 멤버와 겹치는 것 — 상대 행의 common_with_me(나와 겹치는 태그)를
+  // 전부 모으면 곧 "내 태그 중 누군가와 통하는 태그" 목록이 된다 (백엔드 수정 불필요)
+  const myCommon = [
+    ...new Set(
+      members
+        .filter((m) => m.user_id !== userId)
+        .flatMap((m) => m.common_with_me ?? []),
+    ),
+  ]
+
   return (
     <div>
       <div className="panel-title">멤버 — {members.length}</div>
@@ -53,8 +63,9 @@ export function MembersPanel({ serverId, online }: { serverId: number; online: S
                 {m.display_name}
                 {me && <span className="muted">(나)</span>}
               </div>
-              {/* common_with_me: 내 태그와 겹치는 항목 — TagPills가 하이라이트해서 보여준다 */}
-              <TagPills tags={m.tags} common={m.common_with_me} />
+              {/* common_with_me: 내 태그와 겹치는 항목 — TagPills가 하이라이트해서 보여준다.
+                  내 행에는 myCommon을 넘겨 "누군가와 통하는 내 태그"도 똑같이 반짝이게 한다 */}
+              <TagPills tags={m.tags} common={me ? myCommon : m.common_with_me} />
             </div>
           </div>
         )

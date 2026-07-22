@@ -8,11 +8,12 @@
 
 /* ---------- 서버 레일 ---------- */
 
+/* 서버 레일 — 슬랙식 좌측 프레임: 레일(진한 스카이) + 사이드바(밝은 스카이) 한 덩어리 */
 .server-rail {
   width: 68px;
   flex-shrink: 0;
-  background: var(--rail-bg);
-  border-right: 1px solid var(--border);
+  background: #5fa8dd;
+  border-right: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -28,14 +29,16 @@
   overflow-y: auto;
   flex: 1;
   width: 100%;
-  padding: 0 0 8px;
+  /* overflow 컨테이너라 위 여백이 없으면 첫 아이콘의 활성 링(3px)과
+     hover 확대가 상단에서 잘린다 — 링+확대분만큼 띄운다 */
+  padding: 6px 0 8px;
 }
 
 .rail-item {
   position: relative;
   width: 44px;
   height: 44px;
-  border-radius: 14px;
+  border-radius: 999px;
   border: none;
   color: #fff;
   font-weight: 700;
@@ -43,12 +46,16 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  transition: border-radius 180ms var(--ease);
+  transition: border-radius 260ms var(--ease), transform 260ms var(--ease);
+}
+
+.rail-item:hover {
+  transform: scale(1.06);
 }
 
 .rail-item.active {
-  border-radius: 12px;
-  box-shadow: 0 0 0 2px var(--accent-border);
+  border-radius: 16px;
+  box-shadow: 0 0 0 3px #fff;
 }
 
 .rail-pill {
@@ -59,34 +66,36 @@
   width: 4px;
   height: 26px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--text-h);
 }
 
 .rail-add {
   width: 44px;
   height: 44px;
-  border-radius: 14px;
-  border: 1px dashed var(--border);
+  border-radius: 999px;
+  border: none;
   background: var(--surface);
-  color: var(--accent);
+  color: var(--text-h);
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  transition: border-color 180ms var(--ease);
+  box-shadow: var(--shadow);
+  transition: transform 260ms var(--ease), background 260ms var(--ease);
 }
 
 .rail-add:hover {
-  border-color: var(--accent-border);
+  transform: scale(1.06);
   background: var(--accent-bg);
 }
 
 /* ---------- 채널 사이드바 ---------- */
 
+/* 채널 사이드바 — 좌측 프레임의 밝은 스카이 면 */
 .chat-sidebar {
   width: 240px;
   flex-shrink: 0;
-  background: var(--surface-2);
-  border-right: 1px solid var(--border);
+  background: var(--sky);
+  border-right: none;
   display: flex;
   flex-direction: column;
   padding: 12px 8px;
@@ -94,7 +103,7 @@
 
 .sidebar-head {
   padding: 8px 10px 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(25, 26, 35, 0.14);
   margin-bottom: 10px;
 }
 
@@ -114,16 +123,16 @@
   align-items: center;
   gap: 6px;
   margin-top: 6px;
-  padding: 2px 4px;
+  padding: 2px 6px;
   border: none;
   background: none;
-  color: var(--text);
+  color: rgba(25, 26, 35, 0.72);
   font-size: 12px;
-  border-radius: 6px;
+  border-radius: 999px;
 }
 
 .invite-chip:hover {
-  background: var(--accent-bg);
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .copied-note {
@@ -143,7 +152,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: rgba(25, 26, 35, 0.55);
 }
 
 .sidebar-channels {
@@ -157,12 +166,12 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: rgba(25, 26, 35, 0.72);
   text-decoration: none;
   font-size: 15px;
-  transition: background 180ms var(--ease), color 180ms var(--ease);
+  transition: background 260ms var(--ease), color 260ms var(--ease), transform 260ms var(--ease);
 }
 
 .sidebar-channel .name {
@@ -176,14 +185,16 @@
 }
 
 .sidebar-channel:hover {
-  background: var(--hover);
+  background: rgba(255, 255, 255, 0.55);
   color: var(--text-h);
 }
 
+/* 활성 채널 — 스카이 프레임 위 흰 알약으로 강조 (슬랙의 하이라이트 방식) */
 .sidebar-channel.active {
-  background: var(--accent-bg);
-  color: var(--accent-text);
+  background: #fff;
+  color: var(--text-h);
   font-weight: 600;
+  box-shadow: var(--shadow);
 }
 
 .sidebar-channel.active .hash {
@@ -196,10 +207,10 @@
 }
 
 .channel-add .input {
-  padding: 6px 10px;
+  padding: 6px 12px;
   font-size: 13px;
-  border-radius: 8px;
-  background: var(--bg);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
 }
 
 .sidebar-me {
@@ -209,7 +220,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 10px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(25, 26, 35, 0.14);
   color: var(--text-h);
   font-size: 14px;
   font-weight: 600;
@@ -223,7 +234,7 @@
 .sidebar-me button {
   border: none;
   background: none;
-  color: var(--text);
+  color: rgba(25, 26, 35, 0.65);
   font-size: 12px;
   padding: 0;
 }
@@ -278,24 +289,77 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  border-radius: 8px;
-  padding: 5px 10px;
+  border: none;
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 6px 12px;
   font-size: 16px;
   color: var(--text-h);
   text-decoration: none;
   line-height: 1;
-  transition: border-color 180ms var(--ease), background 180ms var(--ease);
+  transition: background 260ms var(--ease), transform 260ms var(--ease);
 }
 
 .icon-btn:hover {
-  border-color: var(--border-bright);
+  transform: scale(1.05);
 }
 
 .icon-btn.active {
-  background: var(--accent-bg);
-  border-color: var(--accent-border);
+  background: var(--sky);
+  color: var(--text-h);
+}
+
+/* AI 아이스브레이커 버튼 — Gemini풍 그라디언트 스파크를 키우고 은은하게 반짝여 강조.
+   색은 아이콘(보라 #9168C0 → 파랑 #1BA1E3) 그라디언트와 같은 계열의 글로우를 쓴다. */
+.ib-spark-btn {
+  padding: 9px 15px;
+  background:
+    linear-gradient(135deg, rgba(145, 104, 192, 0.14), rgba(27, 161, 227, 0.14)),
+    var(--surface-2);
+  animation: ib-spark-glow 2.6s ease-in-out infinite;
+}
+
+.ib-spark-btn:hover {
+  transform: scale(1.12);
+}
+
+.ib-spark-btn.active {
+  background:
+    linear-gradient(135deg, rgba(145, 104, 192, 0.3), rgba(27, 161, 227, 0.3)),
+    var(--surface-2);
+}
+
+.ib-spark-btn svg {
+  animation: ib-spark-twinkle 2.6s ease-in-out infinite;
+}
+
+@keyframes ib-spark-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(86, 132, 209, 0);
+  }
+  50% {
+    box-shadow: 0 0 14px 2px rgba(86, 132, 209, 0.45);
+  }
+}
+
+@keyframes ib-spark-twinkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 0 rgba(145, 104, 192, 0));
+  }
+  50% {
+    transform: scale(1.12) rotate(12deg);
+    filter: drop-shadow(0 0 5px rgba(145, 104, 192, 0.55));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ib-spark-btn,
+  .ib-spark-btn svg {
+    animation: none;
+  }
 }
 
 .chat-log {
@@ -314,9 +378,9 @@
   place-items: center;
   width: 56px;
   height: 56px;
-  border-radius: 18px;
-  background: var(--accent-bg);
-  color: var(--accent-text);
+  border-radius: 999px;
+  background: var(--sky);
+  color: var(--text-h);
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 12px;
@@ -365,7 +429,7 @@
 .chat-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: 999px;
   color: #fff;
   font-weight: 600;
   font-size: 16px;
@@ -479,11 +543,10 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  background: var(--surface-grad);
-  border: 1px solid var(--border);
-  border-top-color: var(--border-top);
-  border-radius: 12px;
-  padding: 6px;
+  background: var(--surface);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 6px 6px 12px;
   box-shadow: var(--shadow);
   margin: 8px 16px 16px;
 }
@@ -504,12 +567,11 @@
   bottom: calc(100% + 10px);
   left: 0;
   width: min(340px, 100%);
-  background: var(--surface-grad);
-  border: 1px solid var(--border);
-  border-top-color: var(--border-top);
-  border-radius: 14px;
+  background: var(--surface);
+  border: none;
+  border-radius: 24px;
   box-shadow: var(--shadow-hover);
-  padding: 10px;
+  padding: 12px;
   z-index: 30;
 }
 
@@ -562,6 +624,96 @@
 .ib-target .pill {
   padding: 0 7px;
   font-size: 10px;
+}
+
+/* 아이스브레이커 2단계: 어떤 관심사로 질문할지 알약 토글로 고른다 */
+.ib-tag-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 8px 6px;
+}
+
+.ib-tag-choice {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border-bright);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ib-tag-choice:hover:not(:disabled) {
+  border-color: var(--accent-border);
+}
+
+.ib-tag-choice.selected {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent-text);
+}
+
+.ib-tag-choice:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* 아이스브레이커 3단계: AI가 만든 질문 후보 목록 */
+.ib-question {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-h);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ib-question + .ib-question {
+  margin-top: 6px;
+}
+
+.ib-question:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+.ib-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 2px;
+}
+
+.ib-back {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.ib-back:hover:not(:disabled) {
+  color: var(--text-h);
+}
+
+.ib-back:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.ib-generate {
+  padding: 7px 16px;
+  font-size: 13px;
 }
 
 @media (max-width: 720px) {
