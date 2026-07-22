@@ -61,7 +61,9 @@ export function useChannelSocket(channelId: number, token: string | null) {
       clearInterval(pruner)
       sock.close()
       sockRef.current = null
-      setOnline(new Set())
+      // online은 여기서 비우지 않는다 — 채널 전환 시 헤더의 접속자 수가 0으로
+      // 떨어졌다가 다시 차오르는 깜빡임을 막고, 새 채널의 presence.update가
+      // 도착하면 자연스럽게 교체된다. typers는 채널 종속 정보라 바로 비운다.
       setTypers(new Map())
     }
   }, [channelId, token])

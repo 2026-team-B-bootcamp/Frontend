@@ -55,6 +55,9 @@ export function ChatRoom({
 }) {
   const { userId } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
+  // 첫 페이지 로딩이 끝났는지 — 끝나기 전에는 "대화의 시작" 빈 화면을 그리지 않는다
+  // (채널 전환 때마다 빈 화면 → 메시지 목록으로 번쩍 바뀌는 플리커의 원인이었다)
+  const [firstLoadDone, setFirstLoadDone] = useState(false)
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
@@ -112,10 +115,14 @@ export function ChatRoom({
             hasMoreRef.current = false
             setHasMore(false)
           }
+          setFirstLoadDone(true)
         }
       })
       .catch((err) => {
-        if (active) setError(err instanceof ApiError ? err.message : '메시지를 불러오지 못했습니다')
+        if (active) {
+          setError(err instanceof ApiError ? err.message : '메시지를 불러오지 못했습니다')
+          setFirstLoadDone(true)
+        }
       })
     return () => {
       active = false
@@ -351,6 +358,7 @@ export function ChatRoom({
             </div>
           ))}
         {messages.length === 0 ? (
+          firstLoadDone && (
           <div className="chat-empty">
             <span className="chat-empty-hash">#</span>
             <p className="chat-empty-title">
@@ -360,6 +368,7 @@ export function ChatRoom({
               첫 인사를 건네보세요 — 멤버의 관심사 태그를 보고 말을 걸면 더 쉬워요.
             </p>
           </div>
+          )
         ) : (
           messages.map((m, i) => {
             const prev = i > 0 ? messages[i - 1] : null
