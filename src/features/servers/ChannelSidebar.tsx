@@ -17,6 +17,7 @@ export function ChannelSidebar({
   onAddChannel,
   onProfile,
   onLogout,
+  onNavigate,
 }: {
   server?: Server
   channels: Channel[]
@@ -25,6 +26,8 @@ export function ChannelSidebar({
   onAddChannel: (name: string) => Promise<void>
   onProfile: () => void
   onLogout: () => void
+  // 채널을 골랐을 때 부모가 할 후처리 — 모바일에선 드로어를 닫는다
+  onNavigate?: () => void
 }) {
   const [copied, setCopied] = useState(false)
   const [newChannel, setNewChannel] = useState('')
@@ -87,6 +90,7 @@ export function ChannelSidebar({
             key={c.id}
             to={`/servers/${c.server_id}/channels/${c.id}`}
             className={`sidebar-channel${c.id === activeChannelId ? ' active' : ''}`}
+            onClick={onNavigate}
           >
             <span className="hash">#</span>
             <span className="name">{c.name}</span>

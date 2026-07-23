@@ -28,6 +28,16 @@ export function UsersIcon({ size = 18 }: { size?: number }) {
   )
 }
 
+export function MenuIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base(size)}>
+      <path d="M4 7h16" />
+      <path d="M4 12h16" />
+      <path d="M4 17h16" />
+    </svg>
+  )
+}
+
 export function DiceIcon({ size = 18 }: { size?: number }) {
   return (
     <svg {...base(size)}>

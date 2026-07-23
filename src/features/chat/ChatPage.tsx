@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import {
   createChannel,
+  getMembers,
   listChannels,
   listServers,
   type Channel,
@@ -19,20 +20,22 @@ import { ServerRail } from '../servers/ServerRail'
 import { ChannelSidebar } from '../servers/ChannelSidebar'
 import { ServerAddModal } from '../servers/ServerAddModal'
 import { ProfileModal } from '../users/ProfileModal'
+import { TagSetupModal } from '../users/TagSetupModal'
 import { GamePip } from '../games/GamePip'
 import { useGamesStatus } from '../games/gamesStatus'
 import { WatchTogether } from '../watch/WatchTogether'
 import { Whiteboard } from '../draw/Whiteboard'
 import { ChatRoom } from './ChatRoom'
 import { MembersPanel } from './MembersPanel'
-import { DiceIcon, PaletteIcon, TvIcon, UsersIcon } from '../../shared/ui/icons'
+import { CloseIcon, DiceIcon, MenuIcon, PaletteIcon, TvIcon, UsersIcon } from '../../shared/ui/icons'
 import { useChannelSocket } from '../../shared/realtime/useChannelSocket'
+import { PANEL_OVERLAY_QUERY, useIsMobile, useMediaQuery } from '../../shared/lib/useMediaQuery'
 
 export function ChatPage() {
   const { serverId, channelId } = useParams()
   const sid = Number(serverId)
   const cid = Number(channelId)
-  const { token, displayName, logout } = useAuth()
+  const { token, userId, displayName, logout } = useAuth()
   const navigate = useNavigate()
 
   const [servers, setServers] = useState<Server[]>([])
@@ -42,8 +45,19 @@ export function ChatPage() {
   const channels = channelData?.sid === sid ? channelData.list : []
   // 서버별 채널 목록 캐시 — 재방문 시 fetch를 기다리지 않고 바로 그린다 (백그라운드로 갱신)
   const channelCacheRef = useRef(new Map<number, Channel[]>())
-  // 멤버 사이드 패널과 미니게임 PIP는 서로 독립적으로 열고 닫는다
-  const [showMembers, setShowMembers] = useState(true)
+  // 좁은 화면에서는 레일·사이드바가 드로어로(≤720px), 멤버 패널이 오버레이로(≤900px) 바뀐다
+  const isMobile = useIsMobile()
+  const panelIsOverlay = useMediaQuery(PANEL_OVERLAY_QUERY)
+  // 드로어는 모바일에서만 존재한다 — 넓은 화면으로 돌아가면 열림 상태를 무시한다
+  // (state를 되돌리는 대신 파생값으로 계산해 effect 없이 정리한다)
+  const [navRequested, setNavRequested] = useState(false)
+  const navOpen = navRequested && isMobile
+  const closeNav = () => setNavRequested(false)
+  // 멤버 사이드 패널과 미니게임 PIP는 서로 독립적으로 열고 닫는다.
+  // 패널이 오버레이로 뜨는 폭에선 채팅을 가리므로 기본은 닫힌 상태로 시작한다.
+  const [showMembers, setShowMembers] = useState(
+    () => !window.matchMedia(PANEL_OVERLAY_QUERY).matches,
+  )
   const [gameOpen, setGameOpen] = useState(false)
   const [watchOpen, setWatchOpen] = useState(false)
   const [drawOpen, setDrawOpen] = useState(false)
@@ -52,6 +66,8 @@ export function ChatPage() {
   const [showProfile, setShowProfile] = useState(false)
   const [showAddServer, setShowAddServer] = useState(false)
   const [membersRefresh, setMembersRefresh] = useState(0)
+  // 관심사 태그가 비어 있는 사람에게 서버 입장 시 한 번 띄우는 온보딩 모달
+  const [showTagSetup, setShowTagSetup] = useState(false)
 
   // 채널의 실시간 웹소켓 연결. subscribe로 이벤트 구독, online/typers는 접속중/입력중 상태
   const { subscribe, online, typers, sendTyping } = useChannelSocket(cid, token)
@@ -78,6 +94,28 @@ export function ChatPage() {
   useEffect(() => {
     if (Number.isFinite(sid)) localStorage.setItem('last_server_id', String(sid))
   }, [sid])
+
+  // 관심사 태그가 비어 있으면 태그 설정 모달을 띄운다.
+  // 태그는 이 서비스의 핵심(겹치는 관심사 매칭·AI 아이스브레이커)인데 예전엔 프로필 모달을
+  // 직접 열어야만 설정할 수 있어 빈 채로 쓰는 사람이 많았다. 서버마다 한 번만 권하고,
+  // "나중에 하기"를 누르면 그 서버에선 다시 묻지 않는다(localStorage).
+  useEffect(() => {
+    if (!Number.isFinite(sid) || userId == null) return
+    if (localStorage.getItem(`tag_setup_skipped_${sid}`) === '1') return
+    let active = true
+    getMembers(sid)
+      .then((ms) => {
+        const mine = ms.find((m) => m.user_id === userId)
+        const hasTags = (mine?.tags ?? []).some((t) => t && t.trim().length > 0)
+        if (active && mine && !hasTags) setShowTagSetup(true)
+      })
+      .catch(() => {
+        // 목록을 못 받으면 조용히 넘어간다 — 프로필 모달로 언제든 설정할 수 있다
+      })
+    return () => {
+      active = false
+    }
+  }, [sid, userId])
 
   useEffect(() => {
     let active = true
@@ -111,6 +149,18 @@ export function ChatPage() {
     }
   }, [channelData, sid, cid, navigate])
 
+  // 열려 있는 오버레이(드로어/멤버 패널)는 Esc로 닫는다
+  useEffect(() => {
+    if (!navOpen && !(panelIsOverlay && showMembers)) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return
+      if (navOpen) setNavRequested(false)
+      else setShowMembers(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [navOpen, panelIsOverlay, showMembers])
+
   function onLogout() {
     logout()
     navigate('/login')
@@ -123,6 +173,7 @@ export function ChatPage() {
     channelCacheRef.current.set(sid, next)
     setChannelData({ sid, list: next })
     navigate(`/servers/${sid}/channels/${ch.id}`)
+    closeNav()
   }
 
   const activeServer = servers.find((s) => s.id === sid)
@@ -130,25 +181,62 @@ export function ChatPage() {
 
   return (
     <div className="app-shell">
-      <ServerRail
-        servers={servers}
-        activeId={sid}
-        onSelect={(id) => navigate(`/servers/${id}`)}
-        onAdd={() => setShowAddServer(true)}
-      />
+      {/* 데스크톱에선 display:contents로 투명하게 사라져 레일·사이드바가 셸의 직계 플렉스 아이템이 되고,
+          모바일에선 이 래퍼가 왼쪽에서 밀려 나오는 드로어가 된다 */}
+      <div className={`nav-drawer${navOpen ? ' open' : ''}`}>
+        <ServerRail
+          servers={servers}
+          activeId={sid}
+          onSelect={(id) => {
+            navigate(`/servers/${id}`)
+            closeNav()
+          }}
+          onAdd={() => {
+            setShowAddServer(true)
+            closeNav()
+          }}
+        />
 
-      <ChannelSidebar
-        server={activeServer}
-        channels={channels}
-        activeChannelId={cid}
-        displayName={displayName}
-        onAddChannel={onAddChannel}
-        onProfile={() => setShowProfile(true)}
-        onLogout={onLogout}
-      />
+        <ChannelSidebar
+          server={activeServer}
+          channels={channels}
+          activeChannelId={cid}
+          displayName={displayName}
+          onAddChannel={onAddChannel}
+          onProfile={() => {
+            setShowProfile(true)
+            closeNav()
+          }}
+          onLogout={onLogout}
+          /* 모바일 드로어에서 채널을 고르면 바로 닫고 채팅으로 돌아간다 */
+          onNavigate={closeNav}
+        />
+      </div>
+
+      {/* 드로어 뒤 어둡게 깔리는 면 — 탭하면 닫힌다 (모바일에서만 보임) */}
+      <AnimatePresence>
+        {navOpen && (
+          <motion.div
+            className="nav-scrim"
+            onClick={closeNav}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        )}
+      </AnimatePresence>
 
       <main className="chat-main" ref={chatMainRef}>
         <header className="chat-header">
+          <button
+            className="icon-btn nav-toggle"
+            onClick={() => setNavRequested(true)}
+            title="채널 목록"
+            aria-label="채널 목록 열기"
+          >
+            <MenuIcon size={18} />
+          </button>
           <span className="chat-channel-name"># {activeChannel?.name ?? '채팅'}</span>
           <div className="chat-header-links">
             <span className="online-count" title="접속 중">
@@ -240,6 +328,20 @@ export function ChatPage() {
         </AnimatePresence>
       </main>
 
+      {/* 모바일에서 멤버 패널은 채팅 위를 덮는 오버레이라 뒤를 탭해 닫을 수 있어야 한다 */}
+      <AnimatePresence>
+        {showMembers && panelIsOverlay && (
+          <motion.div
+            className="side-scrim"
+            onClick={() => setShowMembers(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {showMembers && (
           <motion.aside
@@ -251,6 +353,14 @@ export function ChatPage() {
           >
             <div className="panel-head">
               <span className="panel-head-title">멤버</span>
+              <button
+                className="panel-close"
+                onClick={() => setShowMembers(false)}
+                title="닫기"
+                aria-label="멤버 패널 닫기"
+              >
+                <CloseIcon size={16} />
+              </button>
             </div>
             <div className="panel-body">
               {/* 프로필 저장 후(membersRefresh 증가) key가 바뀌어 리마운트 → 태그 변경이 바로 반영됨 */}
@@ -287,6 +397,22 @@ export function ChatPage() {
             serverId={sid}
             serverName={activeServer?.name}
             onClose={() => setShowProfile(false)}
+            onSaved={() => setMembersRefresh((k) => k + 1)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 태그가 비어 있는 사람에게만 자동으로 뜨는 온보딩 모달 */}
+      <AnimatePresence>
+        {showTagSetup && Number.isFinite(sid) && (
+          <TagSetupModal
+            serverId={sid}
+            serverName={activeServer?.name}
+            onClose={() => {
+              setShowTagSetup(false)
+              // 닫았다는 사실을 남겨 이 서버에선 다시 묻지 않는다
+              localStorage.setItem(`tag_setup_skipped_${sid}`, '1')
+            }}
             onSaved={() => setMembersRefresh((k) => k + 1)}
           />
         )}

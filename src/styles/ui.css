@@ -139,35 +139,46 @@
 }
 
 /* 겹치는 태그 — 외곽선 없이 굵은 글씨 + 반짝이는 sheen 스윕만으로 "이 태그로 통한다"를 표현
-   (originkit Shiny Pill의 스위핑 마스크 기법을 CSS ::after로 이식) */
+   (originkit Shiny Pill의 스위핑 마스크 기법을 CSS ::after로 이식)
+
+   구현 주의: 예전엔 그라디언트의 background-position을 애니메이션했는데,
+   사파리(macOS/iOS)가 그라디언트 배경의 background-position 애니메이션을 그리지 않아
+   맥에서만 반짝임이 통째로 사라졌다(QA). 지금은 좁은 하이라이트 막대를 transform으로
+   가로지르게 한다 — transform 애니메이션은 어느 브라우저에서나 합성기에서 처리된다. */
 .pill.common {
   font-weight: 700;
   position: relative;
   overflow: hidden;
+  /* 애니메이션이 꺼진 환경에서도 "통하는 태그"임을 알 수 있게 은은한 링을 남긴다 */
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 0 0 3px rgba(25, 26, 35, 0.12);
 }
 
 .pill.common::after {
   content: '';
   position: absolute;
-  inset: 0;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 45%;
   background: linear-gradient(
-    115deg,
-    transparent 32%,
-    rgba(255, 255, 255, 0.85) 50%,
-    transparent 68%
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.92) 50%,
+    rgba(255, 255, 255, 0) 100%
   );
-  background-size: 220% 100%;
-  background-repeat: no-repeat;
+  transform: translateX(0) skewX(-18deg);
   animation: pill-sheen 2.4s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes pill-sheen {
-  0% {
-    background-position: 180% 0;
+  0%,
+  8% {
+    transform: translateX(0) skewX(-18deg);
   }
+  60%,
   100% {
-    background-position: -120% 0;
+    transform: translateX(480%) skewX(-18deg);
   }
 }
 
@@ -215,7 +226,8 @@
   backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
-  z-index: 50;
+  /* 채팅 드로어(60)·멤버 패널(50)보다 위 — 모달은 항상 최상단이어야 한다 */
+  z-index: 70;
   padding: 20px;
 }
 
@@ -226,10 +238,24 @@
   padding: 24px;
   width: 100%;
   max-width: 380px;
+  /* 내용이 길거나 모바일 키보드로 화면이 줄면 모달 안에서 스크롤되게 한다 */
+  max-height: calc(100svh - 40px);
+  overflow-y: auto;
   box-shadow: var(--shadow-hover);
 }
 
 .modal h2 {
   font-size: 16px;
   margin-bottom: 4px;
+}
+
+@media (max-width: 720px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal {
+    padding: 20px 16px;
+    max-height: calc(100svh - 24px);
+  }
 }

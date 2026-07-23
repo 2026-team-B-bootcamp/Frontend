@@ -25,6 +25,23 @@
   color: var(--text-h);
 }
 
+/* 패널 닫기 X — 오버레이로 뜨는 좁은 화면에서만 필요하다(넓은 화면은 헤더 아이콘으로 토글) */
+.panel-close {
+  display: none;
+  margin-left: auto;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.panel-close:hover {
+  color: var(--text-h);
+  background: var(--hover);
+}
+
 .panel-body {
   flex: 1;
   overflow-y: auto;
@@ -206,13 +223,28 @@
   box-shadow: 0 0 0 2px rgba(93, 155, 87, 0.25);
 }
 
+/* 패널 뒤 어둡게 깔리는 면 — 패널이 오버레이로 뜨는 좁은 화면에서만 렌더된다 */
+.side-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: var(--overlay);
+}
+
 @media (max-width: 900px) {
+  /* 채팅과 자리를 나눠 쓰기엔 좁으므로 오른쪽에서 덮는 오버레이로 전환 */
   .side-panel {
     position: fixed;
     right: 0;
     top: 0;
     bottom: 0;
-    z-index: 40;
+    width: min(84vw, 340px);
+    z-index: 50;
     box-shadow: var(--shadow-hover);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .panel-close {
+    display: grid;
   }
 }

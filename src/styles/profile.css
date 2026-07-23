@@ -146,3 +146,158 @@
     transition: none;
   }
 }
+
+/* ---------- 관심사 태그 온보딩 모달 (TagSetupModal) ---------- */
+
+.tag-setup-modal {
+  max-width: 440px;
+}
+
+.tag-setup-lead {
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* "이 모임의 관심사" 블록 — 입력칸 위에 얹는 회색 카드 */
+.tag-stats {
+  background: var(--surface-2);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+.tag-stats-loading,
+.tag-stats-empty {
+  font-size: 13px;
+  text-align: center;
+  padding: 10px 0;
+  margin: 0;
+}
+
+.tag-stats-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tag-stats-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.tag-stats-count {
+  font-size: 11px;
+}
+
+.tag-stats-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tag-stats-row {
+  display: grid;
+  grid-template-columns: minmax(52px, 88px) 1fr 20px;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-stats-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag-stats-bar {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(25, 26, 35, 0.07);
+  overflow: hidden;
+}
+
+.tag-stats-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  /* 인원이 1명인 태그도 막대가 보이도록 최소 폭을 준다 */
+  min-width: 6px;
+}
+
+.tag-stats-num {
+  font-size: 11px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* AI 한줄 요약 — 스파크 아이콘과 같은 보라·파랑 계열로 "AI가 쓴 문장"임을 알린다 */
+.tag-stats-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(145, 104, 192, 0.12), rgba(27, 161, 227, 0.12));
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-h);
+}
+
+.tag-stats-summary svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.tag-suggest {
+  margin-top: 12px;
+}
+
+.tag-suggest-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.tag-suggest-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-suggest-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border-bright);
+  background: var(--surface);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-h);
+  cursor: pointer;
+  transition: background 150ms var(--ease), border-color 150ms var(--ease),
+    transform 150ms var(--ease);
+}
+
+.tag-suggest-chip:hover {
+  border-color: var(--accent-border);
+  transform: translateY(-1px);
+}
+
+/* 이미 입력칸에 담긴 추천 — 다시 누르면 빠진다 */
+.tag-suggest-chip.picked {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent-text);
+}

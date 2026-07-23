@@ -16,6 +16,8 @@ import { motion, useDragControls } from 'motion/react'
 import { getWatch, startWatch, stopWatch, syncWatch, type WatchState } from './api'
 import { loadYouTubeApi, PAUSED, PLAYING, type YTPlayer } from './youtube'
 import { CloseIcon } from '../../shared/ui/icons'
+import { useIsMobile } from '../../shared/lib/useMediaQuery'
+import { usePipDrag } from '../../shared/lib/usePipDrag'
 import { ApiError } from '../../shared/api/client'
 import type { Subscribe } from '../../shared/realtime/useChannelSocket'
 
@@ -47,8 +49,13 @@ export function WatchTogether({
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [width, setWidth] = useState(() => clamp(400, MIN_W, maxW()))
+  // 모바일에선 화면 폭을 꽉 채우는 시트로 뜬다 — 드래그·리사이즈·인라인 폭을 모두 CSS에 맡긴다
+  const isMobile = useIsMobile()
   const dragControls = useDragControls()
   const resizeRef = useRef<{ x: number; w: number } | null>(null)
+  const pipRef = useRef<HTMLDivElement>(null)
+  // 창 크기·뷰포트가 바뀌어도 채팅 본문 밖으로 나가지 않게 경계를 계속 다시 잰다
+  const { x, y, dragConstraints } = usePipDrag(pipRef, constraintsRef, !isMobile)
 
   const playerRef = useRef<YTPlayer | null>(null)
   const mountRef = useRef<HTMLDivElement | null>(null)
@@ -234,30 +241,37 @@ export function WatchTogether({
 
   return (
     <motion.div
+      ref={pipRef}
       className="watch-pip"
-      style={{ width }}
-      drag
+      style={isMobile ? { x, y } : { width, x, y }}
+      drag={!isMobile}
       dragListener={false}
       dragControls={dragControls}
-      dragConstraints={constraintsRef}
+      dragConstraints={dragConstraints}
       dragMomentum={false}
       dragElastic={0}
-      initial={{ opacity: 0, scale: 0.9, y: 8 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 8 }}
+      // y는 드래그 위치를 담는 모션값이라 등장 애니메이션에서 건드리지 않는다(충돌 방지)
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 헤더 위에 얹히지만 stopPropagation으로 드래그와 충돌하지 않는다 */}
-      <div
-        className="game-pip-resize"
-        onPointerDown={onResizeStart}
-        onPointerMove={onResizeMove}
-        onPointerUp={onResizeEnd}
-        onPointerCancel={onResizeEnd}
-        title="크기 조절"
-      />
+      {!isMobile && (
+        <div
+          className="game-pip-resize"
+          onPointerDown={onResizeStart}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeEnd}
+          onPointerCancel={onResizeEnd}
+          title="크기 조절"
+        />
+      )}
 
-      <div className="watch-pip-head" onPointerDown={(e) => dragControls.start(e)}>
+      <div
+        className="watch-pip-head"
+        onPointerDown={isMobile ? undefined : (e) => dragControls.start(e)}
+      >
         <span className="watch-pip-title">
           📺 함께 보기{active && state?.host_name ? ` · ${state.host_name}님` : ''}
         </span>

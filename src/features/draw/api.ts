@@ -4,18 +4,22 @@
  */
 import { apiFetch } from '../../shared/api/client'
 
-// 정규화(0..1) 좌표 목록 + 색상 + 굵기로 이뤄진 획. user_id는 서버가 채운다.
+/** 좌표계 — "px"는 캔버스 좌상단 기준 CSS 픽셀, "norm"은 0..1 정규화(구버전 데이터) */
+export type StrokeSpace = 'px' | 'norm'
+
+// 좌표 목록 + 색상 + 굵기로 이뤄진 획. user_id와 (구버전 데이터의) space는 서버가 채운다.
 export interface Stroke {
   points: number[][]
   color: string
   width: number
   user_id: number
+  space?: StrokeSpace
 }
 
 // 내가 그린 획 하나를 서버에 저장하고 채널 전체에 방송한다
 export function sendStroke(
   channelId: number,
-  stroke: { points: number[][]; color: string; width: number },
+  stroke: { points: number[][]; color: string; width: number; space: StrokeSpace },
 ) {
   return apiFetch<Stroke>(`/channels/${channelId}/draw/stroke`, {
     method: 'POST',

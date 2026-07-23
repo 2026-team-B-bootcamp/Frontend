@@ -23,6 +23,8 @@ import {
   WordChainPreview,
 } from './GamePreviews'
 import { CloseIcon, DiceIcon } from '../../shared/ui/icons'
+import { useIsMobile } from '../../shared/lib/useMediaQuery'
+import { usePipDrag } from '../../shared/lib/usePipDrag'
 import type { GameStatus, GamesStatus } from './gamesStatus'
 import type { Subscribe } from '../../shared/realtime/useChannelSocket'
 
@@ -66,6 +68,8 @@ export function GamePip({
   statuses: GamesStatus
 }) {
   const [gameKind, setGameKind] = useState<GameKind>('bingo')
+  // 모바일에선 화면 폭을 꽉 채우는 시트로 뜬다 — 드래그·리사이즈·인라인 크기를 모두 CSS에 맡긴다
+  const isMobile = useIsMobile()
   // 폭은 처음부터 컴팩트하게 고정, 높이는 null이면 내용에 맞춘다(작은 게임은 작게).
   // 사용자가 리사이즈를 시작하는 순간 그때의 실제 높이를 집어 명시값으로 전환한다.
   const [w, setW] = useState(() => clamp(300, MIN_W, maxW()))
@@ -75,6 +79,8 @@ export function GamePip({
 
   // 헤더에서만 드래그를 시작한다 — 본문의 게임 칸/버튼은 그대로 클릭되도록 dragListener를 끈다
   const dragControls = useDragControls()
+  // 창 크기·뷰포트가 바뀌어도 채팅 본문 밖으로 나가지 않게 경계를 계속 다시 잰다
+  const { x, y, dragConstraints } = usePipDrag(pipRef, constraintsRef, !isMobile)
 
   // 창이 열려 있는 동안 뷰포트가 줄면 크기도 경계 안으로 다시 맞춘다
   useEffect(() => {
@@ -112,29 +118,35 @@ export function GamePip({
     <motion.div
       ref={pipRef}
       className="game-pip"
-      style={{ width: w, height: h ?? undefined }}
-      drag
+      style={isMobile ? { x, y } : { width: w, height: h ?? undefined, x, y }}
+      drag={!isMobile}
       dragListener={false}
       dragControls={dragControls}
-      dragConstraints={constraintsRef}
+      dragConstraints={dragConstraints}
       dragMomentum={false}
       dragElastic={0}
-      initial={{ opacity: 0, scale: 0.9, y: 8 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 8 }}
+      // y는 드래그 위치를 담는 모션값이라 등장 애니메이션에서 건드리지 않는다(충돌 방지)
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 헤더 위에 얹히지만 stopPropagation으로 드래그와 충돌하지 않는다 */}
-      <div
-        className="game-pip-resize"
-        onPointerDown={onResizeStart}
-        onPointerMove={onResizeMove}
-        onPointerUp={onResizeEnd}
-        onPointerCancel={onResizeEnd}
-        title="크기 조절"
-      />
+      {!isMobile && (
+        <div
+          className="game-pip-resize"
+          onPointerDown={onResizeStart}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeEnd}
+          onPointerCancel={onResizeEnd}
+          title="크기 조절"
+        />
+      )}
 
-      <div className="game-pip-head" onPointerDown={(e) => dragControls.start(e)}>
+      <div
+        className="game-pip-head"
+        onPointerDown={isMobile ? undefined : (e) => dragControls.start(e)}
+      >
         <span className="game-pip-title">
           <DiceIcon size={16} /> 미니게임
         </span>
