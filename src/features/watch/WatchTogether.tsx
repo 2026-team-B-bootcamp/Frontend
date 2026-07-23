@@ -16,6 +16,7 @@ import { motion, useDragControls } from 'motion/react'
 import { getWatch, startWatch, stopWatch, syncWatch, type WatchState } from './api'
 import { loadYouTubeApi, PAUSED, PLAYING, type YTPlayer } from './youtube'
 import { CloseIcon } from '../../shared/ui/icons'
+import { useIsMobile } from '../../shared/lib/useMediaQuery'
 import { ApiError } from '../../shared/api/client'
 import type { Subscribe } from '../../shared/realtime/useChannelSocket'
 
@@ -47,6 +48,8 @@ export function WatchTogether({
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [width, setWidth] = useState(() => clamp(400, MIN_W, maxW()))
+  // 모바일에선 화면 폭을 꽉 채우는 시트로 뜬다 — 드래그·리사이즈·인라인 폭을 모두 CSS에 맡긴다
+  const isMobile = useIsMobile()
   const dragControls = useDragControls()
   const resizeRef = useRef<{ x: number; w: number } | null>(null)
 
@@ -235,8 +238,8 @@ export function WatchTogether({
   return (
     <motion.div
       className="watch-pip"
-      style={{ width }}
-      drag
+      style={isMobile ? undefined : { width }}
+      drag={!isMobile}
       dragListener={false}
       dragControls={dragControls}
       dragConstraints={constraintsRef}
@@ -248,16 +251,21 @@ export function WatchTogether({
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 헤더 위에 얹히지만 stopPropagation으로 드래그와 충돌하지 않는다 */}
-      <div
-        className="game-pip-resize"
-        onPointerDown={onResizeStart}
-        onPointerMove={onResizeMove}
-        onPointerUp={onResizeEnd}
-        onPointerCancel={onResizeEnd}
-        title="크기 조절"
-      />
+      {!isMobile && (
+        <div
+          className="game-pip-resize"
+          onPointerDown={onResizeStart}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeEnd}
+          onPointerCancel={onResizeEnd}
+          title="크기 조절"
+        />
+      )}
 
-      <div className="watch-pip-head" onPointerDown={(e) => dragControls.start(e)}>
+      <div
+        className="watch-pip-head"
+        onPointerDown={isMobile ? undefined : (e) => dragControls.start(e)}
+      >
         <span className="watch-pip-title">
           📺 함께 보기{active && state?.host_name ? ` · ${state.host_name}님` : ''}
         </span>

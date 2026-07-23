@@ -27,4 +27,10 @@ dist-ssr
 .omc/
 
 # 환경변수(민감 정보)
+# .env.example은 추적한다 — 와일드카드로 가리지 않도록 패턴을 좁게 잡는다
 .env
+.env.local
+.env*.local
+
+# Vercel CLI 링크 정보 + OIDC 토큰
+.vercel

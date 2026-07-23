@@ -215,7 +215,8 @@
   backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
-  z-index: 50;
+  /* 채팅 드로어(60)·멤버 패널(50)보다 위 — 모달은 항상 최상단이어야 한다 */
+  z-index: 70;
   padding: 20px;
 }
 
@@ -226,10 +227,24 @@
   padding: 24px;
   width: 100%;
   max-width: 380px;
+  /* 내용이 길거나 모바일 키보드로 화면이 줄면 모달 안에서 스크롤되게 한다 */
+  max-height: calc(100svh - 40px);
+  overflow-y: auto;
   box-shadow: var(--shadow-hover);
 }
 
 .modal h2 {
   font-size: 16px;
   margin-bottom: 4px;
+}
+
+@media (max-width: 720px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal {
+    padding: 20px 16px;
+    max-height: calc(100svh - 24px);
+  }
 }

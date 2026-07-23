@@ -23,6 +23,7 @@ import {
   WordChainPreview,
 } from './GamePreviews'
 import { CloseIcon, DiceIcon } from '../../shared/ui/icons'
+import { useIsMobile } from '../../shared/lib/useMediaQuery'
 import type { GameStatus, GamesStatus } from './gamesStatus'
 import type { Subscribe } from '../../shared/realtime/useChannelSocket'
 
@@ -66,6 +67,8 @@ export function GamePip({
   statuses: GamesStatus
 }) {
   const [gameKind, setGameKind] = useState<GameKind>('bingo')
+  // 모바일에선 화면 폭을 꽉 채우는 시트로 뜬다 — 드래그·리사이즈·인라인 크기를 모두 CSS에 맡긴다
+  const isMobile = useIsMobile()
   // 폭은 처음부터 컴팩트하게 고정, 높이는 null이면 내용에 맞춘다(작은 게임은 작게).
   // 사용자가 리사이즈를 시작하는 순간 그때의 실제 높이를 집어 명시값으로 전환한다.
   const [w, setW] = useState(() => clamp(300, MIN_W, maxW()))
@@ -112,8 +115,8 @@ export function GamePip({
     <motion.div
       ref={pipRef}
       className="game-pip"
-      style={{ width: w, height: h ?? undefined }}
-      drag
+      style={isMobile ? undefined : { width: w, height: h ?? undefined }}
+      drag={!isMobile}
       dragListener={false}
       dragControls={dragControls}
       dragConstraints={constraintsRef}
@@ -125,16 +128,21 @@ export function GamePip({
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 헤더 위에 얹히지만 stopPropagation으로 드래그와 충돌하지 않는다 */}
-      <div
-        className="game-pip-resize"
-        onPointerDown={onResizeStart}
-        onPointerMove={onResizeMove}
-        onPointerUp={onResizeEnd}
-        onPointerCancel={onResizeEnd}
-        title="크기 조절"
-      />
+      {!isMobile && (
+        <div
+          className="game-pip-resize"
+          onPointerDown={onResizeStart}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeEnd}
+          onPointerCancel={onResizeEnd}
+          title="크기 조절"
+        />
+      )}
 
-      <div className="game-pip-head" onPointerDown={(e) => dragControls.start(e)}>
+      <div
+        className="game-pip-head"
+        onPointerDown={isMobile ? undefined : (e) => dragControls.start(e)}
+      >
         <span className="game-pip-title">
           <DiceIcon size={16} /> 미니게임
         </span>
