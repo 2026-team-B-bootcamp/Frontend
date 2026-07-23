@@ -26,12 +26,14 @@ function colorFor(tag: string) {
 export function TagSetupModal({
   serverId,
   serverName,
-  onClose,
+  onDismiss,
   onSaved,
 }: {
   serverId: number
   serverName?: string
-  onClose: () => void
+  // "나중에 하기" — 태그 없이 닫는다. 부모는 이걸 "이 서버에선 다시 묻지 말라"로 기록한다.
+  onDismiss: () => void
+  // 저장 성공 — 닫는 일까지 부모가 맡는다. 여기서 onDismiss를 부르면 "미뤘다"로 잘못 기록된다.
   onSaved: () => void
 }) {
   const [stats, setStats] = useState<TagStats | null>(null)
@@ -86,8 +88,10 @@ export function TagSetupModal({
     setError(null)
     try {
       await upsertTags(serverId, t1, t2, t3)
+      // 닫는 일은 onSaved 안에서 부모가 한다 — 예전엔 여기서 onClose를 불렀는데,
+      // 부모가 그걸 "나중에 하기"로 기록하는 바람에 정상적으로 등록을 끝낸 서버에도
+      // "미뤘음" 표시가 남았다. 그 기록이 다른 계정의 온보딩까지 막았다.
       onSaved()
-      onClose()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '저장에 실패했습니다')
     } finally {
@@ -220,7 +224,7 @@ export function TagSetupModal({
             </div>
           ))}
           <div className="row" style={{ justifyContent: 'flex-end', marginTop: 4 }}>
-            <button type="button" className="btn ghost" onClick={onClose}>
+            <button type="button" className="btn ghost" onClick={onDismiss}>
               나중에 하기
             </button>
             <button type="submit" className="btn" disabled={saving}>
