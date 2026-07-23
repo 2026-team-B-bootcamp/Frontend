@@ -9,7 +9,14 @@ import { flushSync } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import { getMembers, type Member } from '../servers/api'
-import { getIcebreaker, listMessages, sendMessage, type Message } from './api'
+import {
+  createWelcome,
+  deleteMessage,
+  getIcebreaker,
+  listMessages,
+  sendMessage,
+  type Message,
+} from './api'
 import { TagPills } from '../users/TagPills'
 import { highlightRichText, renderRichText } from './richText'
 import { LinkPreview } from './LinkPreview'
@@ -24,7 +31,9 @@ import {
   ItalicIcon,
   SparkIcon,
   StrikeIcon,
+  TrashIcon,
 } from '../../shared/ui/icons'
+import { Avatar } from '../../shared/ui/Avatar'
 import { ApiError } from '../../shared/api/client'
 import { avatarColor } from '../../shared/lib/colors'
 import type { Subscribe, Typer } from '../../shared/realtime/useChannelSocket'
@@ -139,6 +148,16 @@ export function ChatRoom({
             setHasMore(false)
           }
           setFirstLoadDone(true)
+          // 이 채널에서 아직 한 마디도 안 한 사람이면 환영·자기소개 카드를 남긴다.
+          // "처음인지"는 백엔드가 DB로 판정하므로 여기선 그냥 부르기만 하면 되고,
+          // 두 번째부터는 null이 돌아와 아무 일도 일어나지 않는다.
+          createWelcome(channelId)
+            .then((card) => {
+              if (active && card) merge([card])
+            })
+            .catch(() => {
+              // 환영 카드는 있으면 좋은 것 — 실패해도 채팅엔 지장이 없다
+            })
         }
       })
       .catch((err) => {
@@ -158,6 +177,10 @@ export function ChatRoom({
       subscribe((e) => {
         if (e.type === 'message.new') {
           merge([e.payload as unknown as Message])
+        } else if (e.type === 'message.deleted') {
+          // 누군가 자기 메시지를 지웠다 — 열려 있는 모든 화면에서 즉시 사라진다
+          const { id } = e.payload as unknown as { id: number }
+          setMessages((prev) => prev.filter((m) => m.id !== id))
         } else if (e.type === 'ws.open') {
           listMessages(channelId, cursorRef.current || undefined)
             .then(merge)
@@ -398,6 +421,19 @@ export function ChatRoom({
     typeTimer.current = window.setTimeout(tick, 120)
   }
 
+  // 내 메시지를 지운다. 낙관적으로 먼저 화면에서 빼고, 실패하면 되돌린다 —
+  // 지우기는 즉시 반응해야 자연스럽고, 실패는 드물다.
+  async function onDeleteMessage(id: number) {
+    const snapshot = messages
+    setMessages((prev) => prev.filter((m) => m.id !== id))
+    try {
+      await deleteMessage(channelId, id)
+    } catch (err) {
+      setMessages(snapshot)
+      setError(err instanceof ApiError ? err.message : '메시지를 지우지 못했습니다')
+    }
+  }
+
   async function toggleIbPicker() {
     if (ibOpen) {
       setIbOpen(false)
@@ -500,6 +536,8 @@ export function ChatRoom({
               new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() <
                 GROUP_WINDOW_MS
             const hasTags = m.tags.some((t) => t && t.trim().length > 0)
+            // 내 메시지는 카카오톡처럼 오른쪽에 붙인다 — 대화 흐름에서 내 말이 바로 구분된다
+            const mine = m.user_id === userId
             // 채널 진입 시 처음 불러온 메시지들은 애니메이션 없이 바로 보여주고,
             // 그 이후 실시간으로 도착하는 메시지만 슬라이드 인 한다.
             const isInitial = initialIds?.has(m.id) ?? true
@@ -511,13 +549,29 @@ export function ChatRoom({
                 transition={{ duration: 0.18, ease: 'easeOut' }}
               >
                 {newDay && <div className="chat-day">{dayLabel(m.created_at)}</div>}
-                <div className={`chat-row${grouped ? ' grouped' : ''}`}>
+                {/* 첫 입장 환영·자기소개 카드는 말풍선이 아니라 가운데 카드로 그린다 */}
+                {m.kind === 'welcome' ? (
+                  <div className="chat-welcome">
+                    <Avatar
+                      userId={m.user_id}
+                      name={m.display_name}
+                      url={m.avatar_url}
+                      size={32}
+                    />
+                    <div className="chat-welcome-body">
+                      <span className="chat-welcome-label">
+                        <SparkIcon size={12} /> 환영합니다
+                      </span>
+                      <p className="chat-welcome-text">{m.content}</p>
+                      {hasTags && <TagPills tags={m.tags} />}
+                    </div>
+                  </div>
+                ) : (
+                <div className={`chat-row${grouped ? ' grouped' : ''}${mine ? ' mine' : ''}`}>
                   {grouped ? (
                     <span className="chat-gutter">{timeLabel(m.created_at)}</span>
                   ) : (
-                    <div className="chat-avatar" style={{ background: avatarColor(m.user_id) }}>
-                      {m.display_name.charAt(0)}
-                    </div>
+                    <Avatar userId={m.user_id} name={m.display_name} url={m.avatar_url} />
                   )}
                   <div className="chat-body">
                     {!grouped && (
@@ -529,6 +583,18 @@ export function ChatRoom({
                         {hasTags && <TagPills tags={m.tags} />}
                         <span className="chat-time">{timeLabel(m.created_at)}</span>
                       </div>
+                    )}
+                    {/* 내 메시지에만 삭제 버튼 — 평소엔 숨어 있다가 행에 마우스를 올리면 나온다 */}
+                    {mine && (
+                      <button
+                        type="button"
+                        className="chat-delete"
+                        title="메시지 삭제"
+                        aria-label="메시지 삭제"
+                        onClick={() => onDeleteMessage(m.id)}
+                      >
+                        <TrashIcon size={14} />
+                      </button>
                     )}
                     <div className="chat-text">{renderRichText(m.content)}</div>
                     {(() => {
@@ -546,6 +612,7 @@ export function ChatRoom({
                     })()}
                   </div>
                 </div>
+                )}
               </motion.div>
             )
           })

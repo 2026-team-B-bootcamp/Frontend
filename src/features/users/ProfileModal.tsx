@@ -8,17 +8,13 @@ import { motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import { getMembers } from '../servers/api'
 import { getMe, updateMe, uploadAvatar, upsertTags } from './api'
-import { ApiError, BASE_URL } from '../../shared/api/client'
+import { ApiError } from '../../shared/api/client'
+import { resolveAvatarUrl } from '../../shared/lib/avatarUrl'
 import { avatarColor } from '../../shared/lib/colors'
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function resolveAvatarUrl(url: string | null) {
-  if (!url) return null
-  return url.startsWith('http') ? url : `${BASE_URL}${url}`
-}
 
 function CameraIcon() {
   return (

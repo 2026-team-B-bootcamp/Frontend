@@ -19,6 +19,8 @@ export interface Channel {
 export interface Member {
   user_id: number
   display_name: string
+  // 프로필 사진 (없으면 이름 첫 글자 아바타로 대체)
+  avatar_url: string | null
   tags: string[]
   common_with_me: string[]
 }

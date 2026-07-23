@@ -923,3 +923,88 @@
     padding: 10px;
   }
 }
+
+/* ---------- 빙고 턴 표시 · 호출 기록 ---------- */
+
+/* 지금 누구 차례인지 — 내 차례일 때만 색이 들어와 판이 열렸음을 알린다 */
+.bingo-turn {
+  margin: 2px 0 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.bingo-turn.mine {
+  color: var(--accent-text);
+  background: var(--accent-bg);
+  animation: turn-pulse 1.6s ease-in-out infinite;
+}
+
+/* 호출 순서 기록 — 판 아래 작은 글씨로 쌓인다 */
+.bingo-log {
+  margin-top: 10px;
+}
+
+.bingo-log-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+
+.bingo-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  /* 오래 진행되면 길어지므로 높이를 제한하고 안에서만 스크롤한다 */
+  max-height: 76px;
+  overflow-y: auto;
+}
+
+.bingo-log-list li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 10.5px;
+  color: var(--text);
+  /* 순번을 자동으로 매겨 "몇 번째 호출"인지 보이게 한다 */
+  counter-increment: bingo-call;
+}
+
+.bingo-log-list {
+  counter-reset: bingo-call;
+}
+
+.bingo-log-list li::before {
+  content: counter(bingo-call) '.';
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.bingo-log-list li b {
+  font-size: 11.5px;
+  color: var(--text-h);
+}
+
+.bingo-log-list li.mine {
+  background: var(--accent-bg);
+}
+
+.bingo-log-list li.mine b {
+  color: var(--accent-text);
+}
+
+.bingo-log-who {
+  color: var(--text-faint);
+}
