@@ -40,30 +40,6 @@ export function WordChainPreview() {
   )
 }
 
-export function WheelPreview() {
-  const colors = ['#e8622c', '#d9a13c', '#c14e1a', '#8a6410']
-  const parts = colors.map((c, i) => {
-    const start = (i * 360) / colors.length
-    const end = ((i + 1) * 360) / colors.length
-    const toRad = (d: number) => (d * Math.PI) / 180
-    const cx = 20
-    const cy = 20
-    const r = 16
-    const x1 = cx + r * Math.sin(toRad(start))
-    const y1 = cy - r * Math.cos(toRad(start))
-    const x2 = cx + r * Math.sin(toRad(end))
-    const y2 = cy - r * Math.cos(toRad(end))
-    return <path key={i} d={`M${cx},${cy} L${x1},${y1} A${r},${r} 0 0 1 ${x2},${y2} Z`} fill={c} />
-  })
-  return (
-    <svg viewBox="0 0 40 40" className="game-preview-svg">
-      {parts}
-      <circle cx={20} cy={20} r={4} fill="var(--surface)" stroke="var(--border-bright)" />
-      <path d="M20 1.5 16.5 7h7z" fill="var(--text-h)" />
-    </svg>
-  )
-}
-
 export function OmokPreview() {
   const lines = [10, 20, 30]
   return (
@@ -81,15 +57,32 @@ export function OmokPreview() {
   )
 }
 
-export function LadderPreview() {
+export function BalancePreview() {
   return (
     <svg viewBox="0 0 40 40" className="game-preview-svg">
-      <line x1={8} y1={4} x2={8} y2={36} stroke="var(--border-bright)" strokeWidth={2} />
-      <line x1={20} y1={4} x2={20} y2={36} stroke="var(--border-bright)" strokeWidth={2} />
-      <line x1={32} y1={4} x2={32} y2={36} stroke="var(--border-bright)" strokeWidth={2} />
-      <line x1={8} y1={13} x2={20} y2={13} stroke="var(--accent-2)" strokeWidth={2.5} strokeLinecap="round" />
-      <line x1={20} y1={25} x2={32} y2={25} stroke="var(--accent-2)" strokeWidth={2.5} strokeLinecap="round" />
-      <circle cx={8} cy={4} r={2.5} fill="var(--accent)" />
+      <rect x={4} y={8} width={15} height={24} rx={4} fill="var(--accent-bg)" stroke="var(--accent-border)" />
+      <rect x={21} y={8} width={15} height={24} rx={4} fill="var(--sky-bg)" stroke="var(--sky-border)" />
+      <text x={11.5} y={23} textAnchor="middle" className="game-preview-text accent">
+        A
+      </text>
+      <text x={28.5} y={23} textAnchor="middle" className="game-preview-text" fill="var(--sky-text)">
+        B
+      </text>
+    </svg>
+  )
+}
+
+export function TicTacToePreview() {
+  return (
+    <svg viewBox="0 0 40 40" className="game-preview-svg">
+      <line x1={16} y1={5} x2={16} y2={35} stroke="var(--border-bright)" strokeWidth={2} />
+      <line x1={26} y1={5} x2={26} y2={35} stroke="var(--border-bright)" strokeWidth={2} />
+      <line x1={5} y1={16} x2={35} y2={16} stroke="var(--border-bright)" strokeWidth={2} />
+      <line x1={5} y1={26} x2={35} y2={26} stroke="var(--border-bright)" strokeWidth={2} />
+      {/* X (좌상) */}
+      <path d="M7 7l4 4M11 7l-4 4" stroke="var(--accent)" strokeWidth={2} strokeLinecap="round" />
+      {/* O (우중) */}
+      <circle cx={31} cy={21} r={3.4} fill="none" stroke="var(--sky)" strokeWidth={2} />
     </svg>
   )
 }

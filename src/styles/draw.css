@@ -1,0 +1,172 @@
+/* 공유 그림판(Whiteboard) PIP — 채팅 위에 떠서 헤더를 잡고 옮기는 플로팅 창.
+   함께 보기(.watch-pip) 룩을 그대로 따른다: 화이트 면 + 라운드 + 그림자. */
+
+.wb-pip {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  z-index: 30;
+  /* 가로 폭은 컴포넌트가 인라인으로 제어(리사이즈). 여기선 경계만 잡는다 */
+  min-width: 260px;
+  max-width: calc(100% - 40px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-hover);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.wb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.wb-head:active {
+  cursor: grabbing;
+}
+
+.wb-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wb-close {
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  padding: 4px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  transition: color 200ms var(--ease), background 200ms var(--ease);
+}
+
+.wb-close:hover {
+  color: var(--text-h);
+  background: var(--hover);
+}
+
+.wb-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wb-canvas-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.wb-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.wb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wb-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wb-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  padding: 0;
+  cursor: pointer;
+  transition: transform 150ms var(--ease), border-color 150ms var(--ease);
+}
+
+.wb-swatch:hover {
+  transform: translateY(-1px);
+}
+
+.wb-swatch.active {
+  border-color: var(--text-h);
+  transform: translateY(-1px);
+}
+
+.wb-widths {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wb-width {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 150ms var(--ease), background 150ms var(--ease);
+}
+
+.wb-width:hover {
+  border-color: var(--accent-2-border);
+}
+
+.wb-width.active {
+  border-color: var(--accent-2-border);
+  background: var(--accent-2-bg);
+}
+
+.wb-width-dot {
+  display: block;
+  border-radius: 999px;
+  background: var(--text-h);
+}
+
+.wb-clear {
+  margin-left: auto;
+  border: none;
+  background: var(--surface-2);
+  color: var(--text-h);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 200ms var(--ease), color 200ms var(--ease);
+}
+
+.wb-clear:hover {
+  background: var(--accent-bg);
+  color: var(--accent-text);
+}
