@@ -144,22 +144,35 @@ export function Whiteboard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channelId, subscribe])
 
-  // 창 폭(리사이즈)이 바뀌면 캔버스 픽셀 크기를 다시 맞추고 전체를 다시 그린다
+  // 캔버스의 "표시 크기"가 바뀔 때마다 픽셀 버퍼를 다시 맞추고 전체를 다시 그린다.
+  //
+  // 캔버스는 버퍼 크기(canvas.width)와 CSS 표시 크기가 어긋나면 브라우저가 비트맵을
+  // 통째로 늘려/줄여 그린다. 그래서 표시 크기가 바뀐 순간 버퍼를 같이 맞춰주지 않으면
+  // "창 크기를 바꿨더니 그림까지 같이 늘어나는" 문제가 그대로 보인다.
+  //
+  // 예전엔 width state와 window resize만 지켜봤는데 두 군데가 새고 있었다:
+  //  - width state 변경은 useEffect라 페인트 뒤에 반영돼, 리사이즈 핸들을 끄는 동안
+  //    그림이 한 프레임씩 늘었다 줄었다 했다.
+  //  - CSS만으로 폭이 바뀌는 경우(멤버 패널을 열어 채팅 본문이 좁아지면서 max-width에
+  //    걸릴 때, 모바일 시트)는 width state가 안 바뀌어 아예 다시 그려지지 않았다.
+  // ResizeObserver는 이 둘을 모두 잡고 페인트 전에 불리므로 한 번에 해결된다.
+  // (버퍼 크기만 바꾸고 레이아웃은 건드리지 않으므로 관찰 루프는 생기지 않는다)
   useEffect(() => {
-    resizeAndRedraw()
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ro = new ResizeObserver(() => resizeAndRedraw())
+    ro.observe(canvas)
+    return () => ro.disconnect()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width])
+  }, [])
 
-  // 뷰포트가 줄면 창 폭도 경계 안으로 다시 맞춘다.
-  // 모바일에선 폭이 CSS로 결정돼 width state가 안 바뀌므로, 여기서 직접 캔버스도 다시 그린다.
+  // 뷰포트가 줄면 창 폭도 경계 안으로 다시 맞춘다 (다시 그리는 일은 위 ResizeObserver가 맡는다)
   useEffect(() => {
     function onWinResize() {
       setWidth((cur) => clamp(cur, MIN_W, maxW()))
-      requestAnimationFrame(resizeAndRedraw)
     }
     window.addEventListener('resize', onWinResize)
     return () => window.removeEventListener('resize', onWinResize)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 왼쪽 위 핸들로 가로 크기 조절 (오른쪽 아래가 앵커)

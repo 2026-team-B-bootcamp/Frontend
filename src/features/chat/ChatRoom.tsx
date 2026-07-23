@@ -916,19 +916,17 @@ export function ChatRoom({
               {/* 지울 내용을 그대로 보여줘 "다른 메시지를 지우는 실수"를 막는다 */}
               <div className="del-preview">{pendingDelete.content}</div>
               <div className="del-actions">
+                {/* 파괴적 동작이라 기본 포커스는 안전한 쪽(취소)에 둔다 —
+                    모달이 뜨자마자 Enter를 눌러 지워버리는 사고를 막는다 */}
                 <button
                   type="button"
                   className="btn secondary"
                   onClick={() => setPendingDelete(null)}
+                  autoFocus
                 >
                   취소
                 </button>
-                <button
-                  type="button"
-                  className="btn danger"
-                  onClick={onConfirmDelete}
-                  autoFocus
-                >
+                <button type="button" className="btn danger" onClick={onConfirmDelete}>
                   삭제
                 </button>
               </div>
