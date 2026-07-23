@@ -2,9 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, release]
   pull_request:
-    branches: [main]
+    # release는 배포 브랜치다(Vercel Production Branch). main → release PR에서도
+    # lint/build가 돌아야 깨진 빌드가 프로덕션으로 넘어가지 않는다.
+    branches: [main, release]
 
 jobs:
   build:
