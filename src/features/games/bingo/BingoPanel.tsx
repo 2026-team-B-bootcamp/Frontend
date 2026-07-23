@@ -86,6 +86,28 @@ export function BingoPanel({
   const me = players.find((p) => p.user_id === userId)
   const others = players.filter((p) => p.user_id !== userId)
 
+  // 턴제: 내 차례가 아니면 판을 못 누른다. 누구 차례인지는 헤더에 항상 띄운다.
+  const turnUserId = state?.turn_user_id ?? null
+  const myTurn = turnUserId !== null && turnUserId === userId
+  const turnName = players.find((p) => p.user_id === turnUserId)?.display_name ?? null
+
+  // 호출 기록 — 어떤 순서로 숫자가 불렸는지 작은 글씨로 남긴다(관전자·플레이어 공용)
+  const log = state?.call_log ?? []
+  const callLog =
+    log.length === 0 ? null : (
+      <div className="bingo-log">
+        <span className="bingo-log-label">호출 순서</span>
+        <ol className="bingo-log-list">
+          {log.map((c, i) => (
+            <li key={`${c.number}-${i}`} className={c.user_id === userId ? 'mine' : undefined}>
+              <b>{c.number}</b>
+              <span className="bingo-log-who">{c.display_name}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )
+
   // 점수바(공용) — 나 먼저, 나머지 순
   const scorebar = (
     <div className="panel-scorebar">
@@ -158,7 +180,9 @@ export function BingoPanel({
           </div>
         )}
         {scorebar}
-        <p className="muted panel-note">관전 중이에요 — 호출된 숫자</p>
+        <p className="muted panel-note">
+          관전 중이에요{turnName && !roundOver ? ` — 지금은 ${turnName}님 차례` : ''}
+        </p>
         <div className="bingo-called">
           {state.called_numbers.length === 0 ? (
             <span className="muted">아직 호출된 숫자가 없어요</span>
@@ -170,6 +194,7 @@ export function BingoPanel({
             ))
           )}
         </div>
+        {callLog}
         {roundOver && (
           <button
             className="btn"
@@ -204,14 +229,23 @@ export function BingoPanel({
 
       {scorebar}
 
+      {/* 턴 표시 — 내 차례일 때만 판이 활성화되므로 지금 누구 차례인지 항상 보여준다 */}
+      {!roundOver && (
+        <div className={`bingo-turn${myTurn ? ' mine' : ''}`}>
+          {myTurn ? '내 차례예요 — 숫자를 하나 고르세요' : `${turnName ?? '상대'}님 차례예요`}
+        </div>
+      )}
+
       <BingoBoard
         board={state.my_board ?? []}
         called={called}
         onCellClick={onCellClick}
-        disabled={winner !== null}
+        disabled={winner !== null || !myTurn}
       />
 
-      {roundOver ? (
+      {callLog}
+
+      {roundOver && (
         <button
           className="btn"
           style={{ marginTop: 14 }}
@@ -220,8 +254,6 @@ export function BingoPanel({
         >
           {busy ? '시작 중…' : '새 라운드 시작'}
         </button>
-      ) : (
-        <p className="muted panel-note">칸을 누르면 모두에게 그 숫자가 호출돼요</p>
       )}
     </div>
   )

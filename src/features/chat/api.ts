@@ -8,8 +8,12 @@ export interface Message {
   id: number
   user_id: number
   display_name: string
+  // 작성자 프로필 사진 (없으면 이름 첫 글자 아바타로 대체)
+  avatar_url: string | null
   tags: string[]
   content: string
+  // 'user' = 사람이 쓴 메시지, 'welcome' = 첫 입장 시 자동 생성된 환영·자기소개 카드
+  kind: 'user' | 'welcome'
   created_at: string
 }
 
@@ -34,6 +38,17 @@ export function listMessages(channelId: number, afterId?: number, beforeId?: num
       ? `?before_id=${beforeId}`
       : ''
   return apiFetch<Message[]>(`/channels/${channelId}/messages${qs}`)
+}
+
+// 내가 쓴 메시지를 지운다 (백엔드는 소프트 삭제 후 채널에 message.deleted를 방송한다)
+export function deleteMessage(channelId: number, messageId: number) {
+  return apiFetch<void>(`/channels/${channelId}/messages/${messageId}`, { method: 'DELETE' })
+}
+
+// 채널에 처음 들어온 사람의 환영·자기소개 카드를 만든다.
+// 이미 이 채널에 남긴 메시지가 있으면 백엔드가 null을 돌려주고 아무것도 만들지 않는다.
+export function createWelcome(channelId: number) {
+  return apiFetch<Message | null>(`/channels/${channelId}/messages/welcome`, { method: 'POST' })
 }
 
 // 특정 멤버를 상대로 AI가 만들어주는 대화 시작 질문 후보들(최대 3개)을 요청한다.

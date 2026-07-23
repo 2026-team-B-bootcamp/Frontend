@@ -6,7 +6,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { CopyIcon } from '../../shared/ui/icons'
+import { CopyIcon, LogoutIcon } from '../../shared/ui/icons'
+import { Avatar } from '../../shared/ui/Avatar'
+import { useAuth } from '../auth/authContext'
 import type { Channel, Server } from './api'
 
 export function ChannelSidebar({
@@ -29,6 +31,8 @@ export function ChannelSidebar({
   // 채널을 골랐을 때 부모가 할 후처리 — 모바일에선 드로어를 닫는다
   onNavigate?: () => void
 }) {
+  // 아바타를 그리려면 내 user id와 사진 URL이 필요하다 — prop을 늘리는 대신 컨텍스트에서 직접 읽는다
+  const { userId, avatarUrl } = useAuth()
   const [copied, setCopied] = useState(false)
   const [newChannel, setNewChannel] = useState('')
   const [adding, setAdding] = useState(false)
@@ -109,12 +113,30 @@ export function ChannelSidebar({
         />
       </form>
 
+      {/* 내 프로필 패널 — 예전엔 이름 한 줄 + 작은 글자 링크 두 개뿐이라 초라했다.
+          아바타를 큼직하게 보여주고, 패널 전체를 눌러 프로필을 열 수 있게 했다. */}
       <div className="sidebar-me">
-        <span>{displayName}</span>
-        <div className="sidebar-me-actions">
-          <button onClick={onProfile}>프로필</button>
-          <button onClick={onLogout}>로그아웃</button>
-        </div>
+        <button
+          type="button"
+          className="sidebar-me-main"
+          onClick={onProfile}
+          title="프로필 편집"
+        >
+          <Avatar userId={userId ?? 0} name={displayName ?? '?'} url={avatarUrl} size={38} />
+          <span className="sidebar-me-text">
+            <span className="sidebar-me-name">{displayName ?? '사용자'}</span>
+            <span className="sidebar-me-sub">프로필 편집</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="sidebar-me-logout"
+          onClick={onLogout}
+          title="로그아웃"
+          aria-label="로그아웃"
+        >
+          <LogoutIcon size={17} />
+        </button>
       </div>
     </aside>
   )
