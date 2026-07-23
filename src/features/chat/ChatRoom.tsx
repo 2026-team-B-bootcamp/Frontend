@@ -669,15 +669,19 @@ export function ChatRoom({
               /* 3단계: AI가 만든 질문 후보 중 하나 선택 */
               <>
                 <div className="ib-popover-title">마음에 드는 질문을 골라 보내보세요</div>
-                {ibQuestions.map((q) => (
-                  <button
+                {/* AI가 만든 질문은 위에서부터 차례로 스며들듯 나타난다 — "지금 막 생성됐다"는 느낌 */}
+                {ibQuestions.map((q, i) => (
+                  <motion.button
                     key={q}
                     type="button"
                     className="ib-question"
                     onClick={() => onPickIbQuestion(q)}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, delay: i * 0.09, ease: 'easeOut' }}
                   >
                     {q}
-                  </button>
+                  </motion.button>
                 ))}
                 <div className="ib-actions">
                   <button

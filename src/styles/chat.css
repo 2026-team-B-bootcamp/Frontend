@@ -361,8 +361,16 @@
     var(--surface-2);
 }
 
+/* 스파크 아이콘의 반짝임.
+   예전엔 svg 자체에 transform + filter: drop-shadow 를 함께 애니메이션했는데,
+   사파리는 그라디언트(fill="url(#...)")를 쓰는 인라인 SVG에 filter 애니메이션이 얹히면
+   애니메이션을 통째로 버린다 — 맥에서만 AI 아이콘이 안 움직인 원인이다(QA).
+   지금은 svg를 감싼 span에 transform만 걸고, 빛번짐은 버튼 쪽 box-shadow가 맡는다. */
 .ib-spark-btn svg {
+  display: block;
   animation: ib-spark-twinkle 2.6s ease-in-out infinite;
+  /* GPU 레이어로 승격시켜 사파리가 애니메이션을 건너뛰지 않게 한다 */
+  will-change: transform;
 }
 
 @keyframes ib-spark-glow {
@@ -379,11 +387,9 @@
   0%,
   100% {
     transform: scale(1) rotate(0deg);
-    filter: drop-shadow(0 0 0 rgba(145, 104, 192, 0));
   }
   50% {
-    transform: scale(1.12) rotate(12deg);
-    filter: drop-shadow(0 0 5px rgba(145, 104, 192, 0.55));
+    transform: scale(1.16) rotate(14deg);
   }
 }
 
@@ -1103,22 +1109,37 @@
 .gif-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  /* 행 높이는 칸의 정사각 비율(.gif-cell::before)이 정한다 */
+  grid-auto-rows: min-content;
   gap: 4px;
   max-height: 260px;
   overflow-y: auto;
 }
 
+/* 정사각 칸 만들기: aspect-ratio 대신 ::before의 padding-top 100%를 쓴다.
+   사파리(맥)에서 button 요소의 aspect-ratio가 무시돼 칸 높이가 잡히지 않았고,
+   그 결과 GIF 썸네일이 서로 겹쳐 보였다(QA). padding 비율 트릭은 전 브라우저에서 동작한다. */
 .gif-cell {
+  display: block;
+  position: relative;
+  width: 100%;
   border: none;
   padding: 0;
   background: var(--surface-2);
   border-radius: 10px;
   overflow: hidden;
-  aspect-ratio: 1;
   cursor: pointer;
 }
 
+.gif-cell::before {
+  content: '';
+  display: block;
+  padding-top: 100%;
+}
+
 .gif-cell img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1134,6 +1155,11 @@
   line-height: 1.6;
   padding: 12px 6px;
   text-align: center;
+}
+
+/* 안내 문구는 그리드 칸 하나가 아니라 한 줄 전체를 쓴다 */
+.gif-grid .gif-hint {
+  grid-column: 1 / -1;
 }
 
 .gif-hint code {

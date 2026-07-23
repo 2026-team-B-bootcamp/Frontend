@@ -19,6 +19,26 @@ export function upsertTags(serverId: number, tag1: string, tag2: string, tag3: s
   })
 }
 
+export interface TagStatEntry {
+  tag: string
+  count: number
+}
+
+// 태그 설정 모달이 보여주는 "이 모임의 관심사 지형도".
+// summary/suggestions는 백엔드가 AI로 만들고 Redis에 캐시한 값이다.
+export interface TagStats {
+  total_members: number
+  tagged_members: number
+  top_tags: TagStatEntry[]
+  summary: string
+  suggestions: string[]
+  my_tags: string[]
+}
+
+export function getTagStats(serverId: number) {
+  return apiFetch<TagStats>(`/servers/${serverId}/tags/stats`)
+}
+
 // 내 계정 정보 조회
 export function getMe() {
   return apiFetch<User>('/users/me')

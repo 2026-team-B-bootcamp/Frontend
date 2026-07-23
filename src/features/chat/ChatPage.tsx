@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import {
   createChannel,
+  getMembers,
   listChannels,
   listServers,
   type Channel,
@@ -19,6 +20,7 @@ import { ServerRail } from '../servers/ServerRail'
 import { ChannelSidebar } from '../servers/ChannelSidebar'
 import { ServerAddModal } from '../servers/ServerAddModal'
 import { ProfileModal } from '../users/ProfileModal'
+import { TagSetupModal } from '../users/TagSetupModal'
 import { GamePip } from '../games/GamePip'
 import { useGamesStatus } from '../games/gamesStatus'
 import { WatchTogether } from '../watch/WatchTogether'
@@ -33,7 +35,7 @@ export function ChatPage() {
   const { serverId, channelId } = useParams()
   const sid = Number(serverId)
   const cid = Number(channelId)
-  const { token, displayName, logout } = useAuth()
+  const { token, userId, displayName, logout } = useAuth()
   const navigate = useNavigate()
 
   const [servers, setServers] = useState<Server[]>([])
@@ -64,6 +66,8 @@ export function ChatPage() {
   const [showProfile, setShowProfile] = useState(false)
   const [showAddServer, setShowAddServer] = useState(false)
   const [membersRefresh, setMembersRefresh] = useState(0)
+  // 관심사 태그가 비어 있는 사람에게 서버 입장 시 한 번 띄우는 온보딩 모달
+  const [showTagSetup, setShowTagSetup] = useState(false)
 
   // 채널의 실시간 웹소켓 연결. subscribe로 이벤트 구독, online/typers는 접속중/입력중 상태
   const { subscribe, online, typers, sendTyping } = useChannelSocket(cid, token)
@@ -90,6 +94,28 @@ export function ChatPage() {
   useEffect(() => {
     if (Number.isFinite(sid)) localStorage.setItem('last_server_id', String(sid))
   }, [sid])
+
+  // 관심사 태그가 비어 있으면 태그 설정 모달을 띄운다.
+  // 태그는 이 서비스의 핵심(겹치는 관심사 매칭·AI 아이스브레이커)인데 예전엔 프로필 모달을
+  // 직접 열어야만 설정할 수 있어 빈 채로 쓰는 사람이 많았다. 서버마다 한 번만 권하고,
+  // "나중에 하기"를 누르면 그 서버에선 다시 묻지 않는다(localStorage).
+  useEffect(() => {
+    if (!Number.isFinite(sid) || userId == null) return
+    if (localStorage.getItem(`tag_setup_skipped_${sid}`) === '1') return
+    let active = true
+    getMembers(sid)
+      .then((ms) => {
+        const mine = ms.find((m) => m.user_id === userId)
+        const hasTags = (mine?.tags ?? []).some((t) => t && t.trim().length > 0)
+        if (active && mine && !hasTags) setShowTagSetup(true)
+      })
+      .catch(() => {
+        // 목록을 못 받으면 조용히 넘어간다 — 프로필 모달로 언제든 설정할 수 있다
+      })
+    return () => {
+      active = false
+    }
+  }, [sid, userId])
 
   useEffect(() => {
     let active = true
@@ -371,6 +397,22 @@ export function ChatPage() {
             serverId={sid}
             serverName={activeServer?.name}
             onClose={() => setShowProfile(false)}
+            onSaved={() => setMembersRefresh((k) => k + 1)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 태그가 비어 있는 사람에게만 자동으로 뜨는 온보딩 모달 */}
+      <AnimatePresence>
+        {showTagSetup && Number.isFinite(sid) && (
+          <TagSetupModal
+            serverId={sid}
+            serverName={activeServer?.name}
+            onClose={() => {
+              setShowTagSetup(false)
+              // 닫았다는 사실을 남겨 이 서버에선 다시 묻지 않는다
+              localStorage.setItem(`tag_setup_skipped_${sid}`, '1')
+            }}
             onSaved={() => setMembersRefresh((k) => k + 1)}
           />
         )}
