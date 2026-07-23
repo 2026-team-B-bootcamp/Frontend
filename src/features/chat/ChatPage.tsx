@@ -417,12 +417,15 @@ export function ChatPage() {
           <TagSetupModal
             serverId={sid}
             serverName={activeServer?.name}
-            onClose={() => {
+            onDismiss={() => {
               setShowTagSetup(false)
-              // 닫았다는 사실을 남겨 이 서버에선 다시 묻지 않는다
+              // 미뤘다는 사실을 남겨 이 서버에선 다시 묻지 않는다.
+              // 저장하고 닫은 경우엔 여기 오지 않는다 — 태그가 생겼으니 어차피 다시 뜨지 않고,
+              // "미뤘음"으로 잘못 기록하면 그 기록이 남아 나중에 오해를 부른다.
               if (userId != null) localStorage.setItem(tagSetupSkipKey(userId, sid), '1')
             }}
             onSaved={() => {
+              setShowTagSetup(false)
               setMembersRefresh((k) => k + 1)
               // 태그를 막 등록했으니 이제 등장 소개를 만들 수 있다.
               // 백엔드는 태그가 없으면 카드를 만들지 않으므로(맹탕 카드가 "채널당 1회"를
