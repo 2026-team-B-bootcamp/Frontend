@@ -15,6 +15,7 @@ import {
 import { motion, useDragControls } from 'motion/react'
 import { clearDraw, getDraw, sendStroke, type Stroke } from './api'
 import { CloseIcon } from '../../shared/ui/icons'
+import { useIsMobile } from '../../shared/lib/useMediaQuery'
 import type { Subscribe } from '../../shared/realtime/useChannelSocket'
 
 // 팔레트: 이리데센트 3색 파스텔 + 기본 잉크 + 화이트(지우개 대용)
@@ -39,6 +40,8 @@ export function Whiteboard({
   const [width, setWidth] = useState(() => clamp(340, MIN_W, maxW()))
   const [color, setColor] = useState(COLORS[0])
   const [brush, setBrush] = useState(WIDTHS[1])
+  // 모바일에선 화면 폭을 꽉 채우는 시트로 뜬다 — 드래그·리사이즈·인라인 폭을 모두 CSS에 맡긴다
+  const isMobile = useIsMobile()
   const dragControls = useDragControls()
   const resizeRef = useRef<{ x: number; w: number } | null>(null)
 
@@ -139,13 +142,16 @@ export function Whiteboard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [width])
 
-  // 뷰포트가 줄면 창 폭도 경계 안으로 다시 맞춘다
+  // 뷰포트가 줄면 창 폭도 경계 안으로 다시 맞춘다.
+  // 모바일에선 폭이 CSS로 결정돼 width state가 안 바뀌므로, 여기서 직접 캔버스도 다시 그린다.
   useEffect(() => {
     function onWinResize() {
       setWidth((cur) => clamp(cur, MIN_W, maxW()))
+      requestAnimationFrame(resizeAndRedraw)
     }
     window.addEventListener('resize', onWinResize)
     return () => window.removeEventListener('resize', onWinResize)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 왼쪽 위 핸들로 가로 크기 조절 (오른쪽 아래가 앵커)
@@ -222,8 +228,8 @@ export function Whiteboard({
   return (
     <motion.div
       className="wb-pip"
-      style={{ width }}
-      drag
+      style={isMobile ? undefined : { width }}
+      drag={!isMobile}
       dragListener={false}
       dragControls={dragControls}
       dragConstraints={constraintsRef}
@@ -235,16 +241,18 @@ export function Whiteboard({
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 게임 PIP와 동일한 그립 스타일 재사용 */}
-      <div
-        className="game-pip-resize"
-        onPointerDown={onResizeStart}
-        onPointerMove={onResizeMove}
-        onPointerUp={onResizeEnd}
-        onPointerCancel={onResizeEnd}
-        title="크기 조절"
-      />
+      {!isMobile && (
+        <div
+          className="game-pip-resize"
+          onPointerDown={onResizeStart}
+          onPointerMove={onResizeMove}
+          onPointerUp={onResizeEnd}
+          onPointerCancel={onResizeEnd}
+          title="크기 조절"
+        />
+      )}
 
-      <div className="wb-head" onPointerDown={(e) => dragControls.start(e)}>
+      <div className="wb-head" onPointerDown={isMobile ? undefined : (e) => dragControls.start(e)}>
         <span className="wb-title">🎨 공유 그림판</span>
         <button className="wb-close" onClick={onClose} title="닫기">
           <CloseIcon size={16} />

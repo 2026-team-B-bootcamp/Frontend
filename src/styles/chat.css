@@ -6,6 +6,22 @@
   overflow: hidden;
 }
 
+/* ---------- 좌측 내비 드로어 (모바일) ---------- */
+
+/* 데스크톱: 래퍼가 레이아웃에서 사라져 레일·사이드바가 셸의 직계 플렉스 아이템이 된다.
+   모바일(720px 이하): 아래 미디어쿼리에서 실제 드로어로 바뀐다. */
+.nav-drawer {
+  display: contents;
+}
+
+/* 햄버거 버튼과 드로어 뒤 스크림은 모바일에서만 나타난다.
+   햄버거는 .icon-btn(display: inline-flex)도 함께 달고 있어서, 같은 특이도로는
+   나중에 선언된 .icon-btn에 밀린다 — 부모를 붙여 특이도를 한 단계 올린다. */
+.chat-header .nav-toggle,
+.nav-scrim {
+  display: none;
+}
+
 /* ---------- 서버 레일 ---------- */
 
 /* 서버 레일 — 슬랙식 좌측 프레임: 레일(진한 스카이) + 사이드바(밝은 스카이) 한 덩어리 */
@@ -1135,11 +1151,218 @@
   padding-top: 6px;
 }
 
+/* ---------- 모바일 (≤720px) ---------- */
+
 @media (max-width: 720px) {
+  /* 셸 하단에 홈 인디케이터 영역만큼 여백을 둬 입력창이 가려지지 않게 한다 */
+  .app-shell {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* 레일 + 사이드바를 왼쪽에서 밀려 나오는 한 덩어리 드로어로 묶는다 */
+  .nav-drawer {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 60;
+    transform: translateX(-102%);
+    transition: transform 280ms var(--ease);
+    box-shadow: var(--shadow-hover);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .nav-drawer.open {
+    transform: none;
+  }
+
+  .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: var(--overlay);
+  }
+
   .server-rail {
+    width: 60px;
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .rail-item,
+  .rail-add {
+    width: 40px;
+    height: 40px;
+  }
+
+  .chat-sidebar {
+    width: min(66vw, 240px);
+  }
+
+  /* 헤더: 햄버거 → 채널명(남는 폭 전부) → 아이콘들 */
+  .chat-header .nav-toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+    padding: 6px 10px;
+    background: none;
+  }
+
+  .chat-header {
+    gap: 6px;
+    padding: 10px 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .chat-channel-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 아이콘이 5개(멤버·게임·함께보기·그림판 + 접속수)라 좁은 화면에선 가로로 넘긴다 */
+  .chat-header-links {
+    flex-shrink: 0;
+    gap: 4px;
+    max-width: 58%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .online-count {
+    margin-right: 0;
+  }
+
+  .icon-btn {
+    padding: 7px 9px;
+    flex-shrink: 0;
+  }
+
+  /* 터치에선 hover 확대가 눌린 뒤에도 남아 어색하다 — 모바일에선 끈다 */
+  .icon-btn:hover,
+  .ib-spark-btn:hover,
+  .fmt-btn:hover {
+    transform: none;
+  }
+
+  /* 메시지 목록 — 좌우 여백을 줄여 본문 폭을 확보 */
+  .chat-row {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .chat-day {
+    margin: 12px 12px 6px;
+  }
+
+  .chat-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .chat-gutter {
+    width: 32px;
+    /* 터치에는 hover가 없어 영영 안 보이므로 그냥 항상 흐리게 띄운다 */
+    opacity: 0.55;
+  }
+
+  .chat-row:hover {
+    background: none;
+  }
+
+  .chat-empty {
+    padding: 32px 20px 20px;
+  }
+
+  /* 입력 영역 */
+  .typing-bar {
+    padding: 0 16px;
+  }
+
+  .chat-input {
+    margin: 6px 10px 10px;
+    gap: 6px;
+  }
+
+  /* 서식 버튼 6개가 좁은 화면에서 줄바꿈되지 않도록 가로 스크롤로 흘린다 */
+  .chat-toolbar {
+    align-self: stretch;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 4px 8px;
+  }
+
+  .fmt-btn {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+
+  /* iOS는 16px 미만 입력에 자동 확대를 걸어 레이아웃을 망가뜨린다 — 백드롭과 함께 16px로 올린다
+     (두 레이어의 글꼴 지표가 어긋나면 커서 위치가 밀리므로 반드시 같이 바꿔야 한다) */
+  .chat-editor-backdrop,
+  .chat-editor-input {
+    font-size: 16px;
+  }
+
+  .chat-input-row {
+    gap: 6px;
+    padding: 5px 5px 5px 8px;
+  }
+
+  .chat-input-row .btn {
+    padding: 9px 14px;
+    flex-shrink: 0;
+  }
+
+  .ib-spark-btn {
+    padding: 8px 11px;
+    flex-shrink: 0;
+  }
+
+  /* 팝오버(아이스브레이커·이모지·GIF) — 입력 영역 폭에 꽉 채운다 */
+  .ib-popover,
+  .emoji-popover,
+  .gif-popover {
+    width: 100%;
+    max-height: 60svh;
+    overflow-y: auto;
+  }
+
+  .emoji-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .emoji-scroll {
+    max-height: 40svh;
+  }
+
+  .gif-grid {
+    max-height: 40svh;
+  }
+
+  .chat-media {
+    max-width: min(220px, 100%);
+  }
+
+  .yt-embed {
+    width: 100%;
+  }
+}
+
+/* 아주 좁은 화면(≤380px) — 헤더가 넘치지 않도록 접속자 수는 숨긴다 */
+@media (max-width: 380px) {
+  .online-count {
     display: none;
   }
-  .chat-sidebar {
-    display: none;
+
+  .chat-header-links {
+    max-width: 62%;
   }
 }
