@@ -67,6 +67,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAvatarUrl(null)
   }, [])
 
+  // 토큰이 있으면 서버에서 내 프로필(이름·사진)을 받아와 채운다.
+  //
+  // 예전엔 이름·사진을 localStorage에만 두고, 로그인 응답엔 이름이 없어서(login은
+  // applyToken(token, null)) 새 브라우저에서 로그인하면 이름이 비고 아바타가 "?"로
+  // 떴다. 업로드한 프로필 사진도 그 기기에서 직접 올린 게 아니면 영영 보이지 않았다.
+  // 서버가 진짜 값을 갖고 있으니 진입 시 한 번 맞춰 온다(localStorage는 첫 렌더용 캐시).
+  useEffect(() => {
+    if (!token) return
+    let active = true
+    authApi
+      .getMe()
+      .then((me) => {
+        if (!active) return
+        localStorage.setItem(NAME_KEY, me.display_name)
+        setDisplayName(me.display_name)
+        if (me.avatar_url) localStorage.setItem(AVATAR_KEY, me.avatar_url)
+        else localStorage.removeItem(AVATAR_KEY)
+        setAvatarUrl(me.avatar_url)
+      })
+      .catch(() => {
+        // 만료 토큰이면 client.ts가 auth:unauthorized를 쏴서 아래 리스너가 로그아웃시킨다.
+        // 일시적 네트워크 오류라면 캐시된 값으로 그냥 진행한다.
+      })
+    return () => {
+      active = false
+    }
+  }, [token])
+
   // client.ts가 세션 만료(401)를 감지하면 쏘는 전역 이벤트를 듣고 로그아웃한다.
   // 토큰이 null이 되면 RequireAuth가 자동으로 /login으로 보낸다.
   // 다른 탭에서 로그아웃(storage 이벤트로 access_token 제거)한 경우도 함께 반영한다.
