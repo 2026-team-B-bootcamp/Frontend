@@ -115,6 +115,34 @@
   box-shadow: none;
 }
 
+/* 되돌릴 수 없는 동작(메시지 삭제 등) — 붉은 면으로 "이건 파괴적이다"를 미리 알린다 */
+.btn.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* 삭제 확인 모달: 무엇을 지우는지 보여주는 미리보기 + 버튼 줄 */
+.del-preview {
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  /* 긴 메시지는 잘리되 스크롤로 다 볼 수 있게 */
+  max-height: 140px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.del-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
 .btn.small {
   padding: 6px 12px;
   font-size: 13px;
