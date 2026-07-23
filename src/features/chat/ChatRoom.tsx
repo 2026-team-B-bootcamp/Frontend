@@ -96,6 +96,8 @@ export function ChatRoom({
   const [ibSelTags, setIbSelTags] = useState<string[]>([])
   const [ibQuestions, setIbQuestions] = useState<string[] | null>(null)
 
+  // 삭제 확인 모달에 걸려 있는 메시지 — 되돌릴 수 없는 동작이라 한 번 더 묻는다
+  const [pendingDelete, setPendingDelete] = useState<Message | null>(null)
   const [initialIds, setInitialIds] = useState<Set<number> | null>(null)
   const cursorRef = useRef(0)
   const bottomRef = useRef<HTMLDivElement | null>(null)
@@ -393,6 +395,16 @@ export function ChatRoom({
     inputRef.current?.focus()
   }
 
+  // 삭제 확인 모달은 Esc로도 닫힌다 — 실수로 열었을 때 손이 마우스로 갈 필요가 없게
+  useEffect(() => {
+    if (!pendingDelete) return
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') setPendingDelete(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [pendingDelete])
+
   // AI 질문을 타자기처럼 한 글자씩 입력창에 채워넣는다 (originkit Typewriter의
   // 재귀 setTimeout 상태머신 패턴을 입력창에 맞게 축약 이식)
   const typeTimer = useRef<number | null>(null)
@@ -421,13 +433,16 @@ export function ChatRoom({
     typeTimer.current = window.setTimeout(tick, 120)
   }
 
-  // 내 메시지를 지운다. 낙관적으로 먼저 화면에서 빼고, 실패하면 되돌린다 —
-  // 지우기는 즉시 반응해야 자연스럽고, 실패는 드물다.
-  async function onDeleteMessage(id: number) {
+  // 확인 모달에서 "삭제"를 누른 뒤 실제로 지운다. 낙관적으로 먼저 화면에서 빼고,
+  // 실패하면 되돌린다 — 지우기는 즉시 반응해야 자연스럽고, 실패는 드물다.
+  async function onConfirmDelete() {
+    const target = pendingDelete
+    if (!target) return
+    setPendingDelete(null)
     const snapshot = messages
-    setMessages((prev) => prev.filter((m) => m.id !== id))
+    setMessages((prev) => prev.filter((m) => m.id !== target.id))
     try {
-      await deleteMessage(channelId, id)
+      await deleteMessage(channelId, target.id)
     } catch (err) {
       setMessages(snapshot)
       setError(err instanceof ApiError ? err.message : '메시지를 지우지 못했습니다')
@@ -602,7 +617,7 @@ export function ChatRoom({
                         className="chat-delete"
                         title="메시지 삭제"
                         aria-label="메시지 삭제"
-                        onClick={() => onDeleteMessage(m.id)}
+                        onClick={() => setPendingDelete(m)}
                       >
                         <TrashIcon size={14} />
                       </button>
@@ -872,6 +887,55 @@ export function ChatRoom({
           </button>
         </div>
       </form>
+
+      {/* 메시지 삭제 확인 모달 — 지운 메시지는 복구할 수 없어서 무엇을 지우는지 보여주고 한 번 더 묻는다 */}
+      <AnimatePresence>
+        {pendingDelete && (
+          <motion.div
+            className="modal-overlay"
+            onClick={() => setPendingDelete(null)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            <motion.div
+              className="modal"
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+            >
+              <h2>메시지를 삭제할까요?</h2>
+              <p className="muted" style={{ marginBottom: 14 }}>
+                삭제한 메시지는 되돌릴 수 없어요.
+              </p>
+              {/* 지울 내용을 그대로 보여줘 "다른 메시지를 지우는 실수"를 막는다 */}
+              <div className="del-preview">{pendingDelete.content}</div>
+              <div className="del-actions">
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => setPendingDelete(null)}
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className="btn danger"
+                  onClick={onConfirmDelete}
+                  autoFocus
+                >
+                  삭제
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }
