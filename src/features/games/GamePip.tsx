@@ -24,6 +24,7 @@ import {
 } from './GamePreviews'
 import { CloseIcon, DiceIcon } from '../../shared/ui/icons'
 import { useIsMobile } from '../../shared/lib/useMediaQuery'
+import { usePipDrag } from '../../shared/lib/usePipDrag'
 import type { GameStatus, GamesStatus } from './gamesStatus'
 import type { Subscribe } from '../../shared/realtime/useChannelSocket'
 
@@ -78,6 +79,8 @@ export function GamePip({
 
   // 헤더에서만 드래그를 시작한다 — 본문의 게임 칸/버튼은 그대로 클릭되도록 dragListener를 끈다
   const dragControls = useDragControls()
+  // 창 크기·뷰포트가 바뀌어도 채팅 본문 밖으로 나가지 않게 경계를 계속 다시 잰다
+  const { x, y, dragConstraints } = usePipDrag(pipRef, constraintsRef, !isMobile)
 
   // 창이 열려 있는 동안 뷰포트가 줄면 크기도 경계 안으로 다시 맞춘다
   useEffect(() => {
@@ -115,16 +118,17 @@ export function GamePip({
     <motion.div
       ref={pipRef}
       className="game-pip"
-      style={isMobile ? undefined : { width: w, height: h ?? undefined }}
+      style={isMobile ? { x, y } : { width: w, height: h ?? undefined, x, y }}
       drag={!isMobile}
       dragListener={false}
       dragControls={dragControls}
-      dragConstraints={constraintsRef}
+      dragConstraints={dragConstraints}
       dragMomentum={false}
       dragElastic={0}
-      initial={{ opacity: 0, scale: 0.9, y: 8 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 8 }}
+      // y는 드래그 위치를 담는 모션값이라 등장 애니메이션에서 건드리지 않는다(충돌 방지)
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 헤더 위에 얹히지만 stopPropagation으로 드래그와 충돌하지 않는다 */}

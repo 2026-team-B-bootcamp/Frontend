@@ -16,6 +16,7 @@ import { motion, useDragControls } from 'motion/react'
 import { clearDraw, getDraw, sendStroke, type Stroke } from './api'
 import { CloseIcon } from '../../shared/ui/icons'
 import { useIsMobile } from '../../shared/lib/useMediaQuery'
+import { usePipDrag } from '../../shared/lib/usePipDrag'
 import type { Subscribe } from '../../shared/realtime/useChannelSocket'
 
 // 팔레트: 이리데센트 3색 파스텔 + 기본 잉크 + 화이트(지우개 대용)
@@ -44,6 +45,9 @@ export function Whiteboard({
   const isMobile = useIsMobile()
   const dragControls = useDragControls()
   const resizeRef = useRef<{ x: number; w: number } | null>(null)
+  const pipRef = useRef<HTMLDivElement>(null)
+  // 창 크기·뷰포트가 바뀌어도 채팅 본문 밖으로 나가지 않게 경계를 계속 다시 잰다
+  const { x, y, dragConstraints } = usePipDrag(pipRef, constraintsRef, !isMobile)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // 지금까지 그려진 모든 획 — 캔버스 리사이즈 시 전체를 다시 그리는 데 쓴다
@@ -60,22 +64,26 @@ export function Whiteboard({
     brushRef.current = brush
   }, [brush])
 
-  // 정규화(0..1) 좌표로 이뤄진 획 하나를 캔버스에 그린다(현재 픽셀 크기 기준)
+  // 획 하나를 캔버스에 그린다.
+  // space가 'px'면 좌표를 그대로 쓴다 — 창을 키워도 그림 크기는 그대로고 그릴 면만 넓어진다.
+  // space가 'norm'(구버전 데이터)이면 0..1 좌표라 현재 캔버스 크기를 곱해 늘려 그린다.
   function paintStroke(ctx: CanvasRenderingContext2D, s: Stroke, w: number, h: number) {
     if (s.points.length === 0) return
+    const sx = s.space === 'px' ? 1 : w
+    const sy = s.space === 'px' ? 1 : h
     ctx.strokeStyle = s.color
     ctx.lineWidth = s.width
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.beginPath()
     const [x0, y0] = s.points[0]
-    ctx.moveTo(x0 * w, y0 * h)
+    ctx.moveTo(x0 * sx, y0 * sy)
     if (s.points.length === 1) {
       // 점 하나만 찍힌 경우 — 작은 원처럼 보이게 살짝 이어 그린다
-      ctx.lineTo(x0 * w + 0.01, y0 * h + 0.01)
+      ctx.lineTo(x0 * sx + 0.01, y0 * sy + 0.01)
     } else {
       for (let i = 1; i < s.points.length; i++) {
-        ctx.lineTo(s.points[i][0] * w, s.points[i][1] * h)
+        ctx.lineTo(s.points[i][0] * sx, s.points[i][1] * sy)
       }
     }
     ctx.stroke()
@@ -170,39 +178,39 @@ export function Whiteboard({
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
   }
 
-  // 캔버스 위 포인터 좌표를 0..1로 정규화한다
-  function normPoint(e: ReactPointerEvent): [number, number] {
+  // 캔버스 좌상단 기준 CSS 픽셀 좌표. 정규화하지 않는 이유는 위 paintStroke 주석 참고 —
+  // 창을 키웠을 때 그림이 함께 커지지 않고 그릴 수 있는 면이 넓어지게 하기 위해서다.
+  function canvasPoint(e: ReactPointerEvent): [number, number] {
     const canvas = canvasRef.current!
     const rect = canvas.getBoundingClientRect()
     return [
-      clamp((e.clientX - rect.left) / rect.width, 0, 1),
-      clamp((e.clientY - rect.top) / rect.height, 0, 1),
+      clamp(e.clientX - rect.left, 0, rect.width),
+      clamp(e.clientY - rect.top, 0, rect.height),
     ]
   }
 
   function onDrawStart(e: ReactPointerEvent) {
     e.preventDefault()
     ;(e.target as HTMLCanvasElement).setPointerCapture(e.pointerId)
-    drawingRef.current = [normPoint(e)]
+    drawingRef.current = [canvasPoint(e)]
   }
 
   function onDrawMove(e: ReactPointerEvent) {
     const pts = drawingRef.current
     if (!pts) return
-    const p = normPoint(e)
+    const p = canvasPoint(e)
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (canvas && ctx) {
-      // 방금 지나온 구간만 이어 그려 실시간 체감을 준다
-      const rect = canvas.getBoundingClientRect()
+      // 방금 지나온 구간만 이어 그려 실시간 체감을 준다 (좌표가 이미 CSS 픽셀이라 그대로 쓴다)
       const prev = pts[pts.length - 1]
       ctx.strokeStyle = colorRef.current
       ctx.lineWidth = brushRef.current
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
       ctx.beginPath()
-      ctx.moveTo(prev[0] * rect.width, prev[1] * rect.height)
-      ctx.lineTo(p[0] * rect.width, p[1] * rect.height)
+      ctx.moveTo(prev[0], prev[1])
+      ctx.lineTo(p[0], p[1])
       ctx.stroke()
     }
     pts.push(p)
@@ -213,7 +221,12 @@ export function Whiteboard({
     drawingRef.current = null
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
     if (!pts || pts.length === 0) return
-    const stroke = { points: pts, color: colorRef.current, width: brushRef.current }
+    const stroke = {
+      points: pts,
+      color: colorRef.current,
+      width: brushRef.current,
+      space: 'px' as const,
+    }
     // 로컬 기록에 남겨 리사이즈 시에도 다시 그려지게 한다(방송 에코는 무시해도 무방)
     strokesRef.current.push({ ...stroke, user_id: -1 })
     void sendStroke(channelId, stroke).catch(() => {})
@@ -227,17 +240,19 @@ export function Whiteboard({
 
   return (
     <motion.div
+      ref={pipRef}
       className="wb-pip"
-      style={isMobile ? undefined : { width }}
+      style={isMobile ? { x, y } : { width, x, y }}
       drag={!isMobile}
       dragListener={false}
       dragControls={dragControls}
-      dragConstraints={constraintsRef}
+      dragConstraints={dragConstraints}
       dragMomentum={false}
       dragElastic={0}
-      initial={{ opacity: 0, scale: 0.9, y: 8 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 8 }}
+      // y는 드래그 위치를 담는 모션값이라 등장 애니메이션에서 건드리지 않는다(충돌 방지)
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 게임 PIP와 동일한 그립 스타일 재사용 */}
