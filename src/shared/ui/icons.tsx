@@ -107,21 +107,87 @@ export function SparkIcon({ size = 16 }: { size?: number }) {
   )
 }
 
-export function WheelIcon({ size = 18 }: { size?: number }) {
+export function CloseIcon({ size = 18 }: { size?: number }) {
   return (
     <svg {...base(size)}>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 3.5V12l7.36 4.25M12 12 4.64 16.25M12 12 12 20.5" />
-      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M6 6l12 12M18 6 6 18" />
     </svg>
   )
 }
 
-export function LadderIcon({ size = 18 }: { size?: number }) {
+// ---- 채팅 서식 툴바 아이콘 ----
+
+export function BoldIcon({ size = 18 }: { size?: number }) {
   return (
     <svg {...base(size)}>
-      <path d="M7 3.5v17M17 3.5v17" />
-      <path d="M7 8h10M7 13h10M7 18h10" />
+      <path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" />
+    </svg>
+  )
+}
+
+export function ItalicIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base(size)}>
+      <path d="M15 5h-5M14 19H9M14.5 5 9.5 19" />
+    </svg>
+  )
+}
+
+export function StrikeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base(size)}>
+      <path d="M5 12h14" />
+      <path d="M8 8.5a3.5 2.5 0 0 1 6-1.5M8 15a3.5 2.8 0 0 0 6 1.2" />
+    </svg>
+  )
+}
+
+export function CodeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base(size)}>
+      <path d="M9 8 5 12l4 4M15 8l4 4-4 4" />
+    </svg>
+  )
+}
+
+export function EmojiIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base(size)}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0" />
+      <circle cx="9" cy="10" r="0.6" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="10" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function TvIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base(size)}>
+      <rect x="3" y="7" width="18" height="12" rx="2.5" />
+      <path d="M8 3.5 12 7l4-3.5" />
+      <path d="M10 10.5v5l4-2.5z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function PaletteIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base(size)}>
+      <path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.2 0 1.9-1 1.9-2 0-.5-.2-.9-.5-1.2-.3-.4-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H16a4.5 4.5 0 0 0 4.5-4.5C20.5 6.6 16.7 3.5 12 3.5Z" />
+      <circle cx="7.5" cy="10.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" />
+      <circle cx="16" cy="10.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function GifIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base(size)}>
+      <rect x="3" y="6" width="18" height="12" rx="3" />
+      <path d="M9.5 10.2a2 2 0 1 0 0 3.6c1 0 1.6-.5 1.6-1.5v-.4H9.7" />
+      <path d="M13.6 9.9v4.2M16 14.1V9.9h2.4M16 12h1.9" />
     </svg>
   )
 }

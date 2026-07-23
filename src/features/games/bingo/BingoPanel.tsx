@@ -1,12 +1,12 @@
 /**
- * 빙고 게임의 패널 컴포넌트 — 서버와의 통신(참여/클릭/조회)과 승리 연출을 모두 이 파일이 담당한다.
- * 흐름: BingoPanel(여기) → bingo/api.ts → shared/api/client.ts → 백엔드 빙고 라우터.
- * 실제 판 그리기는 BingoBoard에 위임하고, 여기서는 상태 관리와 이벤트 처리만 한다.
+ * 빙고 게임 패널 — 대기 로비(2명+ 시작) → 진행 → 종료를 관리하고, 참가/시작/클릭 통신과 승리 연출을 담당한다.
+ * 흐름: BingoPanel → bingo/api.ts → 백엔드 빙고 라우터. 판 그리기는 BingoBoard에 위임한다.
+ * 진행 중 채널에 들어온(참가 못 한) 사람은 관전자로서 호출 숫자·점수만 본다.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
-import { clickBingo, getBingo, joinBingo, type BingoState } from './api'
+import { clickBingo, getBingo, joinBingo, startBingo, type BingoState } from './api'
 import { ApiError } from '../../../shared/api/client'
 import { BingoBoard } from './BingoBoard'
 import { fireWinConfetti } from '../../../shared/lib/confetti'
@@ -26,11 +26,6 @@ export function BingoPanel({
   const [busy, setBusy] = useState(false)
   const prevWinnerRef = useRef<number | null>(null)
 
-  const winner = state?.winner_user_id ?? null
-  // 서버가 내려준 내 보드가 있어야만 "게임 참여 중"으로 본다
-  const inGame = state !== null && state.my_board !== null
-
-  // 서버에서 최신 게임 상태를 가져와 화면 상태(state)에 반영
   const refetch = useCallback(() => {
     getBingo(channelId)
       .then((s) => setState(s))
@@ -44,7 +39,6 @@ export function BingoPanel({
     refetch()
   }, [refetch])
 
-  // WS 이벤트(bingo.update)나 재연결 때만 서버 상태를 다시 가져온다 — 폴링 없음
   useEffect(
     () =>
       subscribe((e) => {
@@ -53,7 +47,7 @@ export function BingoPanel({
     [subscribe, refetch],
   )
 
-  // 승자가 새로 정해진 순간 내가 이겼으면 축하 연출
+  const winner = state?.winner_user_id ?? null
   useEffect(() => {
     if (winner !== null && prevWinnerRef.current === null && winner === userId) {
       fireWinConfetti()
@@ -61,20 +55,20 @@ export function BingoPanel({
     prevWinnerRef.current = winner
   }, [winner, userId])
 
-  // "게임 열기/참여" 버튼 클릭 시 서버에 참여 요청을 보내고 받은 상태로 화면을 갱신
-  async function onJoin() {
+  async function run(fn: () => Promise<BingoState>) {
     setBusy(true)
     setError(null)
     try {
-      setState(await joinBingo(channelId))
+      setState(await fn())
+      return true
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '참여에 실패했습니다')
+      setError(err instanceof ApiError ? err.message : '요청에 실패했습니다')
+      return false
     } finally {
       setBusy(false)
     }
   }
 
-  // 보드의 숫자 칸을 클릭했을 때 서버에 클릭을 전달 — 이미 승자가 정해졌으면 요청하지 않는다
   async function onCellClick(n: number) {
     if (winner !== null) return
     try {
@@ -86,34 +80,115 @@ export function BingoPanel({
 
   if (loading) return <p className="muted panel-note">불러오는 중…</p>
 
-  if (!inGame) {
-    const roundOver = state !== null && state.winner_user_id !== null
+  const isPlayer = state !== null && state.my_board !== null
+  const players = state?.players ?? []
+  const called = new Set(state?.called_numbers ?? [])
+  const me = players.find((p) => p.user_id === userId)
+  const others = players.filter((p) => p.user_id !== userId)
+
+  // 점수바(공용) — 나 먼저, 나머지 순
+  const scorebar = (
+    <div className="panel-scorebar">
+      {me && <span className="score me">나 {me.completed_lines}줄</span>}
+      {others.map((o) => (
+        <span key={o.user_id} className="score">
+          {o.display_name} {o.completed_lines}줄
+        </span>
+      ))}
+    </div>
+  )
+
+  // 게임 없음 → 열기
+  if (state === null) {
     return (
       <div className="panel-empty">
         {error && <div className="error">{error}</div>}
         <p className="muted panel-note">
-          {state === null
-            ? '아직 게임이 없어요. 1~25 숫자 보드로 함께 빙고를 즐겨보세요.'
-            : roundOver
-              ? '이전 라운드가 끝났어요. 참여하면 새 라운드가 시작됩니다.'
-              : '게임이 진행 중이에요 — 지금 참여할 수 있어요.'}
+          아직 게임이 없어요. 2명 이상 모이면 1~25 숫자 빙고를 시작할 수 있어요.
         </p>
-        <button className="btn" onClick={onJoin} disabled={busy}>
-          {busy ? '참여 중…' : state === null ? '게임 열기' : '게임 참여'}
+        <button className="btn" onClick={() => run(() => joinBingo(channelId))} disabled={busy}>
+          {busy ? '여는 중…' : '게임 열기'}
         </button>
       </div>
     )
   }
 
-  const called = new Set(state.called_numbers)
-  const me = state.players.find((p) => p.user_id === userId)
-  const others = state.players.filter((p) => p.user_id !== userId)
+  // 대기 로비
+  if (state.status === 'waiting') {
+    return (
+      <div className="bingo-panel">
+        {error && <div className="error">{error}</div>}
+        <div className="bingo-lobby">
+          <p className="muted panel-note">대기 중 — 2명 이상 모이면 시작할 수 있어요</p>
+          <div className="bingo-lobby-players">
+            {players.map((p) => (
+              <span key={p.user_id} className={`score${p.user_id === userId ? ' me' : ''}`}>
+                {p.display_name}
+              </span>
+            ))}
+          </div>
+          {!isPlayer ? (
+            <button className="btn" onClick={() => run(() => joinBingo(channelId))} disabled={busy}>
+              {busy ? '참여 중…' : '게임 참여'}
+            </button>
+          ) : (
+            <button
+              className="btn"
+              onClick={() => run(() => startBingo(channelId))}
+              disabled={busy || players.length < 2}
+            >
+              {busy ? '시작 중…' : `게임 시작 (${players.length}명)`}
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
+  const roundOver = state.status === 'finished'
+
+  // 관전자(진행 중 참가 못 함) — 호출 숫자·점수만 표시
+  if (!isPlayer) {
+    return (
+      <div className="bingo-panel">
+        {error && <div className="error">{error}</div>}
+        {roundOver && winner !== null && (
+          <div className="banner lose">
+            {players.find((p) => p.user_id === winner)?.display_name ?? '누군가'}님이 승리했어요
+          </div>
+        )}
+        {scorebar}
+        <p className="muted panel-note">관전 중이에요 — 호출된 숫자</p>
+        <div className="bingo-called">
+          {state.called_numbers.length === 0 ? (
+            <span className="muted">아직 호출된 숫자가 없어요</span>
+          ) : (
+            state.called_numbers.map((n) => (
+              <span key={n} className="bingo-called-chip">
+                {n}
+              </span>
+            ))
+          )}
+        </div>
+        {roundOver && (
+          <button
+            className="btn"
+            style={{ marginTop: 12 }}
+            onClick={() => run(() => joinBingo(channelId))}
+            disabled={busy}
+          >
+            {busy ? '시작 중…' : '새 게임 참여'}
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // 플레이어 — 진행/종료
   return (
     <div className="bingo-panel">
       {error && <div className="error">{error}</div>}
 
-      {/* 승자가 정해지면(3줄 완성) 누가 이겼는지 배너로 보여준다 — 내가 이겼을 때는 위 useEffect에서 confetti도 함께 터진다 */}
       {winner !== null && (
         <motion.div
           className={`banner ${winner === userId ? 'win' : 'lose'}`}
@@ -123,18 +198,11 @@ export function BingoPanel({
         >
           {winner === userId
             ? '3줄 완성! 승리했어요 🎉'
-            : `${state.players.find((p) => p.user_id === winner)?.display_name ?? '상대'}님이 먼저 3줄을 완성했어요`}
+            : `${players.find((p) => p.user_id === winner)?.display_name ?? '상대'}님이 먼저 3줄을 완성했어요`}
         </motion.div>
       )}
 
-      <div className="panel-scorebar">
-        <span className="score me">나 {me?.completed_lines ?? 0}줄</span>
-        {others.map((o) => (
-          <span key={o.user_id} className="score">
-            {o.display_name} {o.completed_lines}줄
-          </span>
-        ))}
-      </div>
+      {scorebar}
 
       <BingoBoard
         board={state.my_board ?? []}
@@ -143,8 +211,13 @@ export function BingoPanel({
         disabled={winner !== null}
       />
 
-      {winner !== null ? (
-        <button className="btn" style={{ marginTop: 14 }} onClick={onJoin} disabled={busy}>
+      {roundOver ? (
+        <button
+          className="btn"
+          style={{ marginTop: 14 }}
+          onClick={() => run(() => joinBingo(channelId))}
+          disabled={busy}
+        >
           {busy ? '시작 중…' : '새 라운드 시작'}
         </button>
       ) : (

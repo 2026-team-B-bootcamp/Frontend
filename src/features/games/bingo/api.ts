@@ -12,6 +12,7 @@ export interface BingoPlayer {
 
 // 서버가 내려주는 빙고 게임의 현재 상태 — 진행 중인 라운드가 없으면 null(404)로 처리됨
 export interface BingoState {
+  status: 'waiting' | 'playing' | 'finished'
   called_numbers: number[]
   my_board: number[] | null
   players: BingoPlayer[]
@@ -21,6 +22,11 @@ export interface BingoState {
 // 게임 참여(또는 새 라운드 시작) 요청 — 서버가 내 새 보드를 만들어 최신 상태를 돌려준다
 export function joinBingo(channelId: number) {
   return apiFetch<BingoState>(`/channels/${channelId}/bingo/join`, { method: 'POST' })
+}
+
+// 대기 → 진행 전환 (2명 이상 모였을 때만 성공)
+export function startBingo(channelId: number) {
+  return apiFetch<BingoState>(`/channels/${channelId}/bingo/start`, { method: 'POST' })
 }
 
 // 숫자 하나를 클릭했다고 서버에 알린다 — 서버가 호출 숫자로 등록하고 갱신된 상태를 돌려준다

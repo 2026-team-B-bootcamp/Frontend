@@ -4,14 +4,27 @@
  * 남이 보낸 메시지는 ChatPage에서 내려준 subscribe(useChannelSocket)로 실시간 수신한다.
  * 그 외에 관심사 태그가 겹치는 멤버에게 AI 아이스브레이커 질문을 붙여넣는 기능도 여기에 있다.
  */
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import { getMembers, type Member } from '../servers/api'
 import { getIcebreaker, listMessages, sendMessage, type Message } from './api'
 import { TagPills } from '../users/TagPills'
-import { SparkIcon } from '../../shared/ui/icons'
+import { highlightRichText, renderRichText } from './richText'
+import { LinkPreview } from './LinkPreview'
+import { firstHttpUrl } from './linkPreviewApi'
+import { EmojiPicker } from './EmojiPicker'
+import { GifPicker } from './GifPicker'
+import {
+  BoldIcon,
+  CodeIcon,
+  EmojiIcon,
+  GifIcon,
+  ItalicIcon,
+  SparkIcon,
+  StrikeIcon,
+} from '../../shared/ui/icons'
 import { ApiError } from '../../shared/api/client'
 import { avatarColor } from '../../shared/lib/colors'
 import type { Subscribe, Typer } from '../../shared/realtime/useChannelSocket'
@@ -61,6 +74,10 @@ export function ChatRoom({
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  // 입력창 위 이모지/GIF 팝오버 — 한 번에 하나만 연다
+  const [picker, setPicker] = useState<'emoji' | 'gif' | null>(null)
+  // 고른 GIF는 바로 보내지 않고 입력창 위에 썸네일로 대기시켰다가 전송한다
+  const [pendingGif, setPendingGif] = useState<string | null>(null)
 
   const [ibOpen, setIbOpen] = useState(false)
   const [ibMembers, setIbMembers] = useState<Member[] | null>(null)
@@ -73,7 +90,9 @@ export function ChatRoom({
   const [initialIds, setInitialIds] = useState<Set<number> | null>(null)
   const cursorRef = useRef(0)
   const bottomRef = useRef<HTMLDivElement | null>(null)
-  const inputRef = useRef<HTMLInputElement | null>(null)
+  const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  // 입력창 뒤에 서식을 그리는 백드롭 — textarea 스크롤과 동기화한다
+  const backdropRef = useRef<HTMLDivElement | null>(null)
   const lastTypingRef = useRef(0)
   const scrolledOnceRef = useRef(false)
 
@@ -97,7 +116,11 @@ export function ChatRoom({
     setMessages((prev) => {
       const known = new Set(prev.map((m) => m.id))
       const fresh = incoming.filter((m) => !known.has(m.id))
-      return fresh.length ? [...prev, ...fresh] : prev
+      // 반드시 id(=시간) 오름차순으로 정렬한다. 초기 로드와 실시간 수신이 동시에
+      // 진행되면 도착 순서가 뒤섞일 수 있는데(느린 연결에서 라이브 메시지가 첫
+      // 페이지보다 먼저 도착 등), 정렬하지 않으면 영구히 뒤죽박죽 렌더된다.
+      // 날짜 구분선·Slack 그룹핑도 오름차순을 전제로 한다.
+      return fresh.length ? [...prev, ...fresh].sort((a, b) => a.id - b.id) : prev
     })
     cursorRef.current = Math.max(cursorRef.current, ...incoming.map((m) => m.id))
   }
@@ -217,9 +240,20 @@ export function ChatRoom({
       prependingRef.current = false
       return
     }
-    // 채널에 처음 들어왔을 때는 스크롤 애니메이션 없이 바로 맨 아래로, 이후 새 메시지부터 부드럽게
-    bottomRef.current?.scrollIntoView({ behavior: scrolledOnceRef.current ? 'smooth' : 'auto' })
+    const log = logRef.current
+    const last = messages[messages.length - 1]
+    // 사용자가 히스토리를 읽으려고 위로 올려둔 상태라면, 새 메시지가 와도 바닥으로
+    // 끌어내리지 않는다(무한스크롤의 취지). 단, ①첫 진입, ②내가 보낸 메시지,
+    // ③이미 바닥 근처(120px)일 때는 자동으로 따라 내려간다.
+    const nearBottom =
+      !log || log.scrollHeight - log.scrollTop - log.clientHeight < 120
+    const isOwn = last?.user_id === userId
+    if (!scrolledOnceRef.current || isOwn || nearBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: scrolledOnceRef.current ? 'smooth' : 'auto' })
+    }
     scrolledOnceRef.current = true
+    // messages.length만으로 충분(내용 변경은 길이 변화를 동반) — userId는 세션 내 불변
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length])
 
   function onDraftChange(value: string) {
@@ -233,21 +267,107 @@ export function ChatRoom({
 
   // 메시지 전송: sendMessage api가 백엔드에 POST하고, 응답으로 받은 메시지를 바로 merge해서
   // 내 화면에 즉시 반영한다 (다른 사람에게는 실시간 이벤트로 전달됨)
-  async function onSend(e: FormEvent) {
-    e.preventDefault()
-    const content = draft.trim()
-    if (!content) return
+  async function doSend(content: string) {
+    const trimmed = content.trim()
+    if (!trimmed || sending) return
     setSending(true)
     setError(null)
     try {
-      const msg = await sendMessage(channelId, content)
+      const msg = await sendMessage(channelId, trimmed)
       merge([msg])
-      setDraft('')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '전송에 실패했습니다')
+      throw err
     } finally {
       setSending(false)
     }
+  }
+
+  function resetEditorHeight() {
+    const el = inputRef.current
+    if (el) el.style.height = 'auto'
+  }
+
+  async function submit() {
+    const text = draft.trim()
+    if (!text && !pendingGif) return
+    try {
+      // 텍스트 먼저, 그다음 GIF를 각각 한 메시지로 보낸다(렌더러는 GIF URL 단독일 때만 이미지로 임베드)
+      if (text) await doSend(text)
+      if (pendingGif) {
+        await doSend(pendingGif)
+        setPendingGif(null)
+      }
+      setDraft('')
+      resetEditorHeight()
+    } catch {
+      // 실패 시 입력 내용은 남겨둔다
+    }
+  }
+
+  function onSend(e: FormEvent) {
+    e.preventDefault()
+    void submit()
+  }
+
+  // Enter로 전송, Shift+Enter는 줄바꿈. 한글 조합 중(Enter로 글자 확정)에는 전송하지 않는다.
+  function onEditorKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      void submit()
+    }
+  }
+
+  // textarea가 스크롤되면 뒤 백드롭도 같은 위치로 맞춘다
+  function onEditorScroll() {
+    const el = inputRef.current
+    const bd = backdropRef.current
+    if (el && bd) bd.scrollTop = el.scrollTop
+  }
+
+  // 내용에 맞춰 입력창 높이를 늘린다(최대 140px, 그 이상은 스크롤)
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`
+    if (backdropRef.current) backdropRef.current.scrollTop = el.scrollTop
+  }, [draft])
+
+  // 선택 영역을 서식 마커로 감싼다 (툴바 B/I/S/코드). 선택이 없으면 마커만 넣고 커서를 사이에 둔다.
+  function wrapSelection(before: string, after: string) {
+    const el = inputRef.current
+    const start = el?.selectionStart ?? draft.length
+    const end = el?.selectionEnd ?? draft.length
+    const sel = draft.slice(start, end)
+    const next = draft.slice(0, start) + before + sel + after + draft.slice(end)
+    setDraft(next)
+    requestAnimationFrame(() => {
+      el?.focus()
+      const caret = start + before.length
+      el?.setSelectionRange(caret, caret + sel.length)
+    })
+  }
+
+  // 커서 위치에 텍스트(이모지 등)를 삽입한다
+  function insertAtCaret(text: string) {
+    const el = inputRef.current
+    const start = el?.selectionStart ?? draft.length
+    const end = el?.selectionEnd ?? draft.length
+    const next = draft.slice(0, start) + text + draft.slice(end)
+    setDraft(next)
+    requestAnimationFrame(() => {
+      el?.focus()
+      const caret = start + text.length
+      el?.setSelectionRange(caret, caret)
+    })
+  }
+
+  // GIF는 바로 보내지 않고 입력창 위에 썸네일로 대기시킨다 — 사용자가 확인 후 전송(또는 X로 취소).
+  function onPickGif(url: string) {
+    setPicker(null)
+    setPendingGif(url)
+    inputRef.current?.focus()
   }
 
   // AI 질문을 타자기처럼 한 글자씩 입력창에 채워넣는다 (originkit Typewriter의
@@ -410,7 +530,20 @@ export function ChatRoom({
                         <span className="chat-time">{timeLabel(m.created_at)}</span>
                       </div>
                     )}
-                    <div className="chat-text">{m.content}</div>
+                    <div className="chat-text">{renderRichText(m.content)}</div>
+                    {(() => {
+                      // renderRichText가 이미 이미지/유튜브 단독 메시지는 임베드하므로 그 경우는 건너뛴다.
+                      const trimmed = m.content.trim()
+                      const standalone = /^https?:\/\/\S+$/i.test(trimmed)
+                      const isYouTube =
+                        /(^|\.)(youtube\.com|youtu\.be|m\.youtube\.com|youtube-nocookie\.com)/i.test(trimmed)
+                      const isMedia =
+                        /\.(gif|png|jpe?g|webp)(\?[^\s]*)?$/i.test(trimmed) ||
+                        /(^|\.)(tenor|giphy)\.com/i.test(trimmed)
+                      if (standalone && (isYouTube || isMedia)) return null
+                      const link = firstHttpUrl(m.content)
+                      return link ? <LinkPreview url={link} /> : null
+                    })()}
                   </div>
                 </div>
               </motion.div>
@@ -560,26 +693,102 @@ export function ChatRoom({
           </motion.div>
         )}
         </AnimatePresence>
-        <button
-          type="button"
-          className={`icon-btn ib-spark-btn${ibOpen ? ' active' : ''}`}
-          onClick={toggleIbPicker}
-          disabled={ibBusy}
-          title="AI 아이스브레이커"
-        >
-          <SparkIcon size={22} />
-        </button>
-        <input
-          ref={inputRef}
-          className="input"
-          placeholder={channelName ? `#${channelName} 에 메시지 보내기` : '메시지 입력…'}
-          value={draft}
-          onChange={(e) => onDraftChange(e.target.value)}
-          maxLength={1000}
-        />
-        <button className="btn" type="submit" disabled={sending}>
-          전송
-        </button>
+
+        <AnimatePresence>
+          {picker === 'emoji' && (
+            <EmojiPicker onPick={(ch) => insertAtCaret(ch)} onClose={() => setPicker(null)} />
+          )}
+          {picker === 'gif' && <GifPicker onPick={onPickGif} onClose={() => setPicker(null)} />}
+        </AnimatePresence>
+
+        {/* 서식 툴바 — 선택 영역을 마크다운 마커로 감싸거나 이모지/GIF 팝오버를 연다 */}
+        <div className="chat-toolbar">
+          <button type="button" className="fmt-btn" title="굵게" onClick={() => wrapSelection('**', '**')}>
+            <BoldIcon size={18} />
+          </button>
+          <button type="button" className="fmt-btn" title="기울임" onClick={() => wrapSelection('_', '_')}>
+            <ItalicIcon size={18} />
+          </button>
+          <button type="button" className="fmt-btn" title="취소선" onClick={() => wrapSelection('~~', '~~')}>
+            <StrikeIcon size={18} />
+          </button>
+          <button type="button" className="fmt-btn" title="코드" onClick={() => wrapSelection('`', '`')}>
+            <CodeIcon size={18} />
+          </button>
+          <span className="chat-toolbar-sep" />
+          <button
+            type="button"
+            className={`fmt-btn${picker === 'emoji' ? ' active' : ''}`}
+            title="이모지"
+            onClick={() => setPicker((p) => (p === 'emoji' ? null : 'emoji'))}
+          >
+            <EmojiIcon size={18} />
+          </button>
+          <button
+            type="button"
+            className={`fmt-btn${picker === 'gif' ? ' active' : ''}`}
+            title="GIF"
+            onClick={() => setPicker((p) => (p === 'gif' ? null : 'gif'))}
+          >
+            <GifIcon size={18} />
+          </button>
+        </div>
+
+        {/* 전송 대기 중인 GIF — 링크가 아니라 실제 GIF 썸네일로 보여준다 */}
+        <AnimatePresence>
+          {pendingGif && (
+            <motion.div
+              className="chat-attach"
+              initial={{ opacity: 0, y: 4, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 4, scale: 0.96 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+            >
+              <img src={pendingGif} className="chat-attach-gif" alt="첨부한 GIF" />
+              <button
+                type="button"
+                className="chat-attach-remove"
+                onClick={() => setPendingGif(null)}
+                title="GIF 빼기"
+              >
+                ✕
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="chat-input-row">
+          <button
+            type="button"
+            className={`icon-btn ib-spark-btn${ibOpen ? ' active' : ''}`}
+            onClick={toggleIbPicker}
+            disabled={ibBusy}
+            title="AI 아이스브레이커"
+          >
+            <SparkIcon size={22} />
+          </button>
+          {/* 입력창 = 투명 textarea + 뒤 백드롭. 백드롭이 서식을 그려 타이핑 자리에 바로 스타일이 보인다.
+              편집·한글 IME·커서는 네이티브 textarea가 그대로 처리한다. */}
+          <div className="chat-editor">
+            <div className="chat-editor-backdrop" ref={backdropRef} aria-hidden="true">
+              {highlightRichText(draft)}
+            </div>
+            <textarea
+              ref={inputRef}
+              className="chat-editor-input"
+              rows={1}
+              placeholder={channelName ? `#${channelName} 에 메시지 보내기` : '메시지 입력…'}
+              value={draft}
+              onChange={(e) => onDraftChange(e.target.value)}
+              onKeyDown={onEditorKeyDown}
+              onScroll={onEditorScroll}
+              maxLength={1000}
+            />
+          </div>
+          <button className="btn" type="submit" disabled={sending}>
+            전송
+          </button>
+        </div>
       </form>
     </>
   )

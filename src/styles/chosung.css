@@ -1,0 +1,153 @@
+/* 초성퀴즈(폭탄 돌리기) — 도화선 · 큰 초성 프롬프트 · 정답 히스토리 칩
+   이리데센트 테마: 화이트 면 + 파스텔 3색(라임·코랄·스카이) + 알약 · var(--ease) */
+
+.cho-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cho-event {
+  font-size: 12px;
+  text-align: center;
+  color: var(--accent-2-text);
+  background: var(--accent-2-bg);
+  border: 1px solid var(--accent-2-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+}
+
+/* ---------- 폭탄 도화선 ---------- */
+
+.cho-fuse {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px 12px;
+}
+
+.cho-bomb {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* 심지 막대 — 남은 시간에 비례해 채워지고, 오른쪽(폭탄 쪽)으로 타들어간다 */
+.cho-fuse-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.cho-fuse-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--lime), var(--sky));
+  transition: width 1s linear;
+}
+
+.cho-fuse-time {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+  flex-shrink: 0;
+  min-width: 42px;
+  text-align: right;
+}
+
+.cho-fuse.danger .cho-fuse-fill {
+  background: linear-gradient(90deg, var(--coral), var(--danger));
+}
+
+.cho-fuse.danger .cho-bomb {
+  animation: cho-shake 0.5s ease-in-out infinite;
+}
+
+.cho-fuse.danger .cho-fuse-time {
+  color: var(--danger);
+}
+
+@keyframes cho-shake {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg) scale(1.12);
+  }
+}
+
+/* ---------- 초성 프롬프트 무대 ---------- */
+
+.cho-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px 14px;
+}
+
+.cho-prompt {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 46px;
+  letter-spacing: 0.12em;
+  color: var(--accent-text);
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.cho-holder {
+  font-size: 13px;
+  color: var(--text);
+  text-align: center;
+}
+
+.cho-holder-me {
+  color: var(--accent-text);
+  font-size: 14px;
+}
+
+/* ---------- 정답 히스토리 ---------- */
+
+.cho-history {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 2px 10px;
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+.cho-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+/* ---------- 입력 ---------- */
+
+.cho-input {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.cho-input .input {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
