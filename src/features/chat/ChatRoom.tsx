@@ -536,7 +536,9 @@ export function ChatRoom({
               new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() <
                 GROUP_WINDOW_MS
             const hasTags = m.tags.some((t) => t && t.trim().length > 0)
-            // 내 메시지는 카카오톡처럼 오른쪽에 붙인다 — 대화 흐름에서 내 말이 바로 구분된다
+            // 내 메시지에만 삭제 버튼을 붙이기 위한 판정.
+            // (한때 내 메시지를 오른쪽으로 정렬해봤지만 아바타만 넘어가고 글은 그대로라
+            //  어색해서 되돌렸다 — 디스코드처럼 모두 왼쪽 정렬로 둔다)
             const mine = m.user_id === userId
             // 채널 진입 시 처음 불러온 메시지들은 애니메이션 없이 바로 보여주고,
             // 그 이후 실시간으로 도착하는 메시지만 슬라이드 인 한다.
@@ -567,7 +569,7 @@ export function ChatRoom({
                     </div>
                   </div>
                 ) : (
-                <div className={`chat-row${grouped ? ' grouped' : ''}${mine ? ' mine' : ''}`}>
+                <div className={`chat-row${grouped ? ' grouped' : ''}`}>
                   {grouped ? (
                     <span className="chat-gutter">{timeLabel(m.created_at)}</span>
                   ) : (
