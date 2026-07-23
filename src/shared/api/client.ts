@@ -24,6 +24,17 @@ export class ApiError extends Error {
   }
 }
 
+// 세션 만료 처리: 로그인/회원가입(/auth/*)이 아닌 요청에서 401이 오면 토큰이
+// 만료·무효화된 것이므로 저장된 토큰을 지우고 전역 이벤트를 쏜다.
+// AuthProvider가 이 이벤트를 듣고 로그아웃 → RequireAuth가 /login으로 보낸다.
+// (로그인 실패의 401은 여기서 제외 — 아직 세션이 없고 폼이 에러를 직접 처리한다)
+function handleUnauthorized(path: string, status: number): void {
+  if (status === 401 && !path.startsWith('/auth/')) {
+    setToken(null)
+    window.dispatchEvent(new Event('auth:unauthorized'))
+  }
+}
+
 interface ApiOptions {
   method?: string
   body?: unknown
@@ -51,6 +62,7 @@ export async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<
   })
 
   if (!res.ok) {
+    handleUnauthorized(path, res.status)
     let detail = res.statusText
     try {
       const data = await res.json()
@@ -79,6 +91,7 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
   })
 
   if (!res.ok) {
+    handleUnauthorized(path, res.status)
     let detail = res.statusText
     try {
       const data = await res.json()
