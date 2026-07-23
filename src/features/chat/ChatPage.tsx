@@ -4,7 +4,7 @@
  * 서버·채널 목록은 servers/api.ts로 불러오고, 실시간 연결은 useChannelSocket 훅 하나로 열어서
  * 그 결과(subscribe, online, typers)를 ChatRoom과 미니게임 패널들에 그대로 내려준다.
  */
-import { useEffect, useRef, useState, type ComponentType } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
@@ -19,33 +19,14 @@ import { ServerRail } from '../servers/ServerRail'
 import { ChannelSidebar } from '../servers/ChannelSidebar'
 import { ServerAddModal } from '../servers/ServerAddModal'
 import { ProfileModal } from '../users/ProfileModal'
-import { BingoPanel } from '../games/bingo/BingoPanel'
-import { WordChainPanel } from '../games/wordchain/WordChainPanel'
-import { WheelPanel } from '../games/wheel/WheelPanel'
-import { LadderPanel } from '../games/ladder/LadderPanel'
-import { OmokPanel } from '../games/omok/OmokPanel'
-import {
-  BingoPreview,
-  LadderPreview,
-  OmokPreview,
-  WheelPreview,
-  WordChainPreview,
-} from '../games/GamePreviews'
+import { GamePip } from '../games/GamePip'
+import { useGamesStatus } from '../games/gamesStatus'
+import { WatchTogether } from '../watch/WatchTogether'
+import { Whiteboard } from '../draw/Whiteboard'
 import { ChatRoom } from './ChatRoom'
 import { MembersPanel } from './MembersPanel'
-import { DiceIcon, UsersIcon } from '../../shared/ui/icons'
+import { DiceIcon, PaletteIcon, TvIcon, UsersIcon } from '../../shared/ui/icons'
 import { useChannelSocket } from '../../shared/realtime/useChannelSocket'
-
-type PanelTab = 'members' | 'minigame'
-type GameKind = 'bingo' | 'wordchain' | 'wheel' | 'ladder' | 'omok'
-
-const GAMES: { key: GameKind; label: string; Preview: ComponentType }[] = [
-  { key: 'bingo', label: '빙고', Preview: BingoPreview },
-  { key: 'wordchain', label: '끝말잇기', Preview: WordChainPreview },
-  { key: 'wheel', label: '돌림판', Preview: WheelPreview },
-  { key: 'ladder', label: '사다리타기', Preview: LadderPreview },
-  { key: 'omok', label: '오목', Preview: OmokPreview },
-]
 
 export function ChatPage() {
   const { serverId, channelId } = useParams()
@@ -61,14 +42,22 @@ export function ChatPage() {
   const channels = channelData?.sid === sid ? channelData.list : []
   // 서버별 채널 목록 캐시 — 재방문 시 fetch를 기다리지 않고 바로 그린다 (백그라운드로 갱신)
   const channelCacheRef = useRef(new Map<number, Channel[]>())
-  const [panel, setPanel] = useState<PanelTab | null>('members')
-  const [gameKind, setGameKind] = useState<GameKind>('bingo')
+  // 멤버 사이드 패널과 미니게임 PIP는 서로 독립적으로 열고 닫는다
+  const [showMembers, setShowMembers] = useState(true)
+  const [gameOpen, setGameOpen] = useState(false)
+  const [watchOpen, setWatchOpen] = useState(false)
+  const [drawOpen, setDrawOpen] = useState(false)
+  // 게임 PIP의 드래그 경계 — 채팅 본문 안에서만 움직이게 한다
+  const chatMainRef = useRef<HTMLElement>(null)
   const [showProfile, setShowProfile] = useState(false)
   const [showAddServer, setShowAddServer] = useState(false)
   const [membersRefresh, setMembersRefresh] = useState(0)
 
   // 채널의 실시간 웹소켓 연결. subscribe로 이벤트 구독, online/typers는 접속중/입력중 상태
   const { subscribe, online, typers, sendTyping } = useChannelSocket(cid, token)
+  // 진행 중인 게임이 있으면 헤더 미니게임 아이콘에 라이브 점을 띄워 관전을 유도한다
+  const gameStatuses = useGamesStatus(cid, subscribe)
+  const anyGameLive = Object.values(gameStatuses).some((s) => s === 'playing')
 
   // 서버 레일에 보여줄 내가 속한 서버 목록을 백엔드에서 가져온다
   useEffect(() => {
@@ -136,10 +125,6 @@ export function ChatPage() {
     navigate(`/servers/${sid}/channels/${ch.id}`)
   }
 
-  function togglePanel(tab: PanelTab) {
-    setPanel((cur) => (cur === tab ? null : tab))
-  }
-
   const activeServer = servers.find((s) => s.id === sid)
   const activeChannel = channels.find((c) => c.id === cid)
 
@@ -162,7 +147,7 @@ export function ChatPage() {
         onLogout={onLogout}
       />
 
-      <main className="chat-main">
+      <main className="chat-main" ref={chatMainRef}>
         <header className="chat-header">
           <span className="chat-channel-name"># {activeChannel?.name ?? '채팅'}</span>
           <div className="chat-header-links">
@@ -170,18 +155,33 @@ export function ChatPage() {
               <span className="presence-dot on" /> {online.size}
             </span>
             <button
-              className={`icon-btn${panel === 'members' ? ' active' : ''}`}
-              onClick={() => togglePanel('members')}
+              className={`icon-btn${showMembers ? ' active' : ''}`}
+              onClick={() => setShowMembers((v) => !v)}
               title="멤버"
             >
               <UsersIcon />
             </button>
             <button
-              className={`icon-btn${panel === 'minigame' ? ' active' : ''}`}
-              onClick={() => togglePanel('minigame')}
-              title="미니게임"
+              className={`icon-btn${gameOpen ? ' active' : ''}`}
+              onClick={() => setGameOpen((v) => !v)}
+              title={anyGameLive ? '미니게임 (진행 중)' : '미니게임'}
             >
               <DiceIcon />
+              {anyGameLive && <span className="icon-live-dot" />}
+            </button>
+            <button
+              className={`icon-btn${watchOpen ? ' active' : ''}`}
+              onClick={() => setWatchOpen((v) => !v)}
+              title="함께 보기"
+            >
+              <TvIcon />
+            </button>
+            <button
+              className={`icon-btn${drawOpen ? ' active' : ''}`}
+              onClick={() => setDrawOpen((v) => !v)}
+              title="공유 그림판"
+            >
+              <PaletteIcon />
             </button>
           </div>
         </header>
@@ -201,10 +201,47 @@ export function ChatPage() {
         ) : (
           <div className="chat-log" />
         )}
+
+        {/* 미니게임 PIP — 채팅 위에 떠서 헤더를 잡고 옮길 수 있는 플로팅 창.
+            채널이 정해진 뒤에만 띄운다(게임 API는 채널 id가 필요) */}
+        <AnimatePresence>
+          {gameOpen && Number.isFinite(cid) && (
+            <GamePip
+              channelId={cid}
+              subscribe={subscribe}
+              onClose={() => setGameOpen(false)}
+              constraintsRef={chatMainRef}
+              statuses={gameStatuses}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {watchOpen && Number.isFinite(cid) && (
+            <WatchTogether
+              key={cid}
+              channelId={cid}
+              subscribe={subscribe}
+              onClose={() => setWatchOpen(false)}
+              constraintsRef={chatMainRef}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {drawOpen && Number.isFinite(cid) && (
+            <Whiteboard
+              channelId={cid}
+              subscribe={subscribe}
+              onClose={() => setDrawOpen(false)}
+              constraintsRef={chatMainRef}
+            />
+          )}
+        </AnimatePresence>
       </main>
 
       <AnimatePresence>
-        {panel && (
+        {showMembers && (
           <motion.aside
             className="side-panel"
             initial={{ x: 32, opacity: 0 }}
@@ -212,62 +249,16 @@ export function ChatPage() {
             exit={{ x: 32, opacity: 0 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
           >
-            <div className="panel-tabs">
-              {(
-                [
-                  ['members', '멤버'],
-                  ['minigame', '미니게임'],
-                ] as [PanelTab, string][]
-              ).map(([tab, label]) => (
-                <button
-                  key={tab}
-                  className={`panel-tab${panel === tab ? ' active' : ''}`}
-                  onClick={() => setPanel(tab)}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="panel-head">
+              <span className="panel-head-title">멤버</span>
             </div>
             <div className="panel-body">
-              {panel === 'members' && (
-                // 프로필 저장 후(membersRefresh 증가) key가 바뀌어 리마운트 → 태그 변경이 바로 반영됨
-                <MembersPanel
-                  key={`${sid}-${membersRefresh}`}
-                  serverId={sid}
-                  online={online}
-                />
-              )}
-              {panel === 'minigame' && (
-                <>
-                  <div className="game-select-grid">
-                    {GAMES.map((g) => (
-                      <button
-                        key={g.key}
-                        className={`game-select-card${gameKind === g.key ? ' active' : ''}`}
-                        onClick={() => setGameKind(g.key)}
-                      >
-                        <g.Preview />
-                        <span className="game-select-label">{g.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {gameKind === 'bingo' && (
-                    <BingoPanel channelId={cid} subscribe={subscribe} />
-                  )}
-                  {gameKind === 'wordchain' && (
-                    <WordChainPanel channelId={cid} subscribe={subscribe} />
-                  )}
-                  {gameKind === 'wheel' && (
-                    <WheelPanel channelId={cid} subscribe={subscribe} />
-                  )}
-                  {gameKind === 'ladder' && (
-                    <LadderPanel channelId={cid} subscribe={subscribe} />
-                  )}
-                  {gameKind === 'omok' && (
-                    <OmokPanel channelId={cid} subscribe={subscribe} />
-                  )}
-                </>
-              )}
+              {/* 프로필 저장 후(membersRefresh 증가) key가 바뀌어 리마운트 → 태그 변경이 바로 반영됨 */}
+              <MembersPanel
+                key={`${sid}-${membersRefresh}`}
+                serverId={sid}
+                online={online}
+              />
             </div>
           </motion.aside>
         )}

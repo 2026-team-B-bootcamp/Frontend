@@ -11,41 +11,18 @@
   overflow: hidden;
 }
 
-.panel-tabs {
+/* 멤버 전용 패널 헤더 (미니게임은 이제 PIP로 분리돼 탭이 필요 없다) */
+.panel-head {
   display: flex;
-  gap: 6px;
-  padding: 12px 12px 10px;
+  align-items: center;
+  padding: 14px 16px 10px;
   border-bottom: 1px solid var(--border);
 }
 
-.panel-tab {
-  flex: 1;
-  border: none;
-  background: var(--surface-2);
-  padding: 7px 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  border-radius: 999px;
-  transition: color 260ms var(--ease), background 260ms var(--ease), transform 260ms var(--ease);
-}
-
-.panel-tab:hover {
+.panel-head-title {
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-h);
-  transform: scale(1.03);
-}
-
-/* 활성 탭 — 역할색 솔리드 알약: 멤버(라포) = 코랄, 미니게임 = 라임 */
-.panel-tab.active {
-  color: var(--text-h);
-}
-
-.panel-tab:nth-child(1).active {
-  background: var(--coral);
-}
-
-.panel-tab:nth-child(2).active {
-  background: var(--lime);
 }
 
 .panel-body {
@@ -67,6 +44,7 @@
 }
 
 .game-select-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -76,6 +54,20 @@
   padding: 12px 6px 10px;
   border-radius: 18px;
   transition: transform 260ms var(--ease), background 260ms var(--ease), box-shadow 260ms var(--ease);
+}
+
+/* 관전 유도 상태 뱃지 — 카드 우상단 (🙂 대기 / 🟢 진행중 / 🚩 종료) */
+.game-status-badge {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.game-status-badge.playing {
+  animation: turn-pulse 1.6s ease-in-out infinite;
+  border-radius: 50%;
 }
 
 .game-select-card:hover {

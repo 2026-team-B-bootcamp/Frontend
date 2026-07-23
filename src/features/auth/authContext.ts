@@ -36,3 +36,17 @@ export function userIdFromToken(token: string): number | null {
     return null
   }
 }
+
+// exp(만료) 클레임을 프론트에서 미리 확인한다 — 만료된 토큰으로 화면에 들어가면
+// 이후 모든 API/WS가 실패하는 "깨진 껍데기"에 갇히므로, 라우트 가드에서 미리 튕겨낸다.
+// 파싱 불가하거나 이미 만료면 true(=무효). exp가 없으면 서버 검증에 맡긴다(false).
+export function isTokenExpired(token: string): boolean {
+  try {
+    const payload = token.split('.')[1]
+    const json = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    if (typeof json.exp !== 'number') return false
+    return json.exp * 1000 <= Date.now()
+  } catch {
+    return true
+  }
+}

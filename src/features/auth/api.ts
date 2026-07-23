@@ -20,3 +20,8 @@ export function login(email: string, password: string) {
     body: { email, password },
   })
 }
+
+// 서버측 토큰 무효화(전 기기 로그아웃). 현재 토큰의 버전을 올려 이후 옛 토큰을 거부시킨다.
+export function logout() {
+  return apiFetch<void>('/auth/logout', { method: 'POST' })
+}

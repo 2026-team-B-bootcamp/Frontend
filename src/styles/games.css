@@ -1,4 +1,235 @@
-/* 게임 — 스코어바, 빙고, 끝말잇기, 돌림판, 사다리타기 */
+/* 게임 — PIP 플로팅 창, 스코어바, 빙고, 끝말잇기, 오목 */
+
+/* ---------- 함께 보기(Watch Together) PIP ---------- */
+
+.watch-pip {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  z-index: 30;
+  /* 가로 폭은 컴포넌트가 인라인으로 제어(리사이즈). 여기선 경계만 잡는다 */
+  min-width: 300px;
+  max-width: calc(100% - 40px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-hover);
+  overflow: hidden;
+}
+
+.watch-pip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.watch-pip-head:active {
+  cursor: grabbing;
+}
+
+.watch-pip-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.watch-pip-close {
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  padding: 4px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  transition: color 200ms var(--ease), background 200ms var(--ease);
+}
+
+.watch-pip-close:hover {
+  color: var(--text-h);
+  background: var(--hover);
+}
+
+.watch-pip-body {
+  padding: 12px;
+}
+
+.watch-player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.watch-player-mount {
+  position: absolute;
+  inset: 0;
+}
+
+.watch-player-mount iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.watch-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.watch-hint {
+  font-size: 12px;
+}
+
+.watch-stop {
+  border: none;
+  background: var(--surface-2);
+  color: var(--text-h);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  transition: background 200ms var(--ease), color 200ms var(--ease);
+}
+
+.watch-stop:hover {
+  background: var(--accent-bg);
+  color: var(--accent-text);
+}
+
+.watch-start {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 2px;
+  text-align: center;
+}
+
+.watch-start .watch-hint {
+  margin: 0;
+}
+
+/* ---------- 미니게임 PIP ---------- */
+
+/* 채팅 위에 떠서 헤더를 잡고 옮기는 플로팅 창 — 화이트 면 + 라운드 + 그림자 */
+.game-pip {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  z-index: 30;
+  /* 폭·높이는 컴포넌트가 인라인으로 제어(리사이즈/반응형). 여기선 경계만 잡는다 */
+  min-width: 240px;
+  max-width: calc(100% - 40px);
+  max-height: calc(100% - 40px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-hover);
+  overflow: hidden;
+  /* 드래그/리사이즈 중 본문 텍스트가 선택(하이라이트)되지 않게 한다 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 단, 게임 안 입력창(끝말잇기 등)은 정상적으로 선택·편집되어야 한다 */
+.game-pip input,
+.game-pip textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* 왼쪽 위 모서리 리사이즈 핸들 — 대각선 그립 두 줄로 표시, 헤더 위에 얹힌다 */
+.game-pip-resize {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  z-index: 2;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.game-pip-resize::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 7px;
+  height: 7px;
+  border-top: 1.5px solid var(--text-faint);
+  border-left: 1.5px solid var(--text-faint);
+  border-top-left-radius: 3px;
+}
+
+.game-pip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.game-pip-head:active {
+  cursor: grabbing;
+}
+
+.game-pip-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.game-pip-close {
+  display: grid;
+  place-items: center;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  padding: 4px;
+  border-radius: 999px;
+  transition: color 200ms var(--ease), background 200ms var(--ease);
+}
+
+.game-pip-close:hover {
+  color: var(--text-h);
+  background: var(--hover);
+}
+
+.game-pip-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
 
 .panel-scorebar {
   display: flex;
@@ -94,6 +325,45 @@
 
 .bingo-cell:disabled {
   cursor: default;
+}
+
+/* 빙고 대기 로비 */
+.bingo-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 6px;
+  text-align: center;
+}
+
+.bingo-lobby-players {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* 빙고 관전 — 호출된 숫자 칩 목록 */
+.bingo-called {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding: 4px 2px 8px;
+}
+
+.bingo-called-chip {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--accent-2);
+  color: var(--text-h);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* ---------- 끝말잇기 ---------- */
@@ -209,177 +479,273 @@
   flex: 1;
 }
 
-/* ---------- 공용: 항목 추가 폼/목록 (돌림판, 사다리) ---------- */
+/* ---------- 틱택토 ---------- */
 
-.wheel-input {
+.ttt-panel {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ttt-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 240px;
+  margin: 4px auto 6px;
+}
+
+.ttt-cell {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 16px;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  transition: background 150ms var(--ease), transform 150ms var(--ease), box-shadow 150ms var(--ease);
+}
+
+.ttt-cell:hover:not(:disabled) {
+  background: var(--accent-2-bg);
+  transform: translateY(-2px);
+}
+
+.ttt-cell:disabled {
+  cursor: default;
+}
+
+.ttt-cell.last {
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.ttt-cell.win {
+  background: var(--accent-2);
+}
+
+.ttt-mark {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.ttt-mark.x {
+  color: var(--accent-text);
+}
+
+.ttt-mark.o {
+  color: var(--sky-text);
+}
+
+/* ---------- 밸런스게임 ---------- */
+
+.bal-start {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 4px 2px;
+}
+
+.bal-start .panel-note {
+  margin-bottom: 2px;
+}
+
+.bal-vs {
+  text-align: center;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.balance-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.bal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 10px;
 }
 
-.wheel-input .input {
-  flex: 1;
-}
-
-.wheel-options {
-  list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.wheel-option-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 5px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  font-size: 13px;
+.bal-title {
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-h);
 }
 
-.wheel-option-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--text-faint);
+.bal-timer {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 3px 10px;
 }
 
-.wheel-option-remove {
-  border: none;
-  background: none;
-  color: var(--text-faint);
-  font-size: 15px;
-  line-height: 1;
-  padding: 0 2px;
-}
-
-.wheel-option-remove:hover {
+.bal-timer.danger {
   color: var(--danger);
+  animation: turn-pulse 1s ease-in-out infinite;
 }
 
-.wheel-actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 4px;
+.bal-timer.done {
+  color: var(--text-faint);
 }
 
-/* ---------- 돌림판 ---------- */
-
-.wheel-panel {
+.bal-options {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
-.wheel-dial-wrap {
+.bal-option {
   position: relative;
-  width: 100%;
-  max-width: 200px;
-  margin: 4px auto 14px;
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  transition: border-color 200ms var(--ease), transform 200ms var(--ease);
 }
 
-.wheel-dial {
-  width: 100%;
-  height: auto;
-  display: block;
+.bal-option:hover:not(:disabled) {
+  transform: translateY(-2px);
 }
 
-.wheel-pointer {
+.bal-option:disabled {
+  cursor: default;
+}
+
+/* 채워지는 막대 — A는 코랄, B는 스카이 틴트 */
+.bal-option-bar {
   position: absolute;
-  top: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 14px solid var(--text-h);
+  inset: 0 auto 0 0;
+  z-index: 0;
+  transition: width 400ms var(--ease);
+}
+
+.bal-option.a .bal-option-bar {
+  background: var(--accent-bg);
+}
+
+.bal-option.b .bal-option-bar {
+  background: var(--sky-bg);
+}
+
+.bal-option.mine {
+  border-color: var(--text-h);
+}
+
+.bal-option.win {
+  border-color: var(--success);
+  box-shadow: 0 0 0 2px rgba(93, 155, 87, 0.25);
+}
+
+.bal-option-label,
+.bal-option-count {
+  position: relative;
   z-index: 1;
 }
 
-.wheel-empty-text {
-  font-size: 9px;
-  fill: var(--text-faint);
-}
-
-.wheel-slice-label {
-  font-size: 9px;
+.bal-option-label {
   font-weight: 700;
-  fill: #fff;
-  pointer-events: none;
-}
-
-/* ---------- 사다리타기 ---------- */
-
-.ladder-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.ladder-entries {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.ladder-entry-list {
-  list-style: none;
-  margin: 0 0 8px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.ladder-entry-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  font-size: 12px;
-  color: var(--text-h);
-}
-
-.ladder-board-wrap {
-  margin-bottom: 12px;
-}
-
-.ladder-labels {
-  display: flex;
-  justify-content: space-around;
-  gap: 4px;
-  padding: 0 4px;
-}
-
-.ladder-label {
-  flex: 1;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 15px;
   color: var(--text-h);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.ladder-label.result {
-  color: var(--accent-text);
+.bal-option-count {
+  font-size: 12px;
+  color: var(--text);
+  flex-shrink: 0;
 }
 
-.ladder-svg {
-  display: block;
-  width: 100%;
+.bal-result {
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-h);
+  background: var(--accent-2-bg);
+  border-radius: 12px;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.bal-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.bal-comments-empty {
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.bal-comment {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.bal-comment.mine {
+  background: var(--accent-bg);
+}
+
+.bal-comment-side {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  border-radius: 5px;
+  padding: 1px 5px;
+  line-height: 1.4;
+}
+
+.bal-comment-side.a {
+  background: var(--coral);
+}
+
+.bal-comment-side.b {
+  background: var(--sky);
+}
+
+.bal-comment-name {
+  font-weight: 600;
+  color: var(--text-h);
+  flex-shrink: 0;
+}
+
+.bal-comment-text {
+  color: var(--chat-text);
+  word-break: break-word;
+}
+
+.bal-comment-form {
+  display: flex;
+  gap: 6px;
+}
+
+.bal-comment-form .input {
+  flex: 1;
 }
 
 /* ---------- 오목 ---------- */

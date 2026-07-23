@@ -50,10 +50,17 @@ export function connectChannelSocket(
         // 형식이 깨진 이벤트는 무시
       }
     }
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       ws = null
       if (closed) return
-      // 지수 백오프(exponential backoff): 재시도 간격을 매번 2배로 늘리되 최대 5초로 제한
+      // 인증·권한 실패(토큰 만료/멤버 아님 등)로 닫혔으면 재연결해도 계속 거부당하므로
+      // 무한 재시도를 멈추고, 전역 로그아웃 흐름(AuthContext가 듣는 이벤트)을 깨운다.
+      if (event.code === 4400 || event.code === 4401 || event.code === 4403) {
+        closed = true
+        window.dispatchEvent(new Event('auth:unauthorized'))
+        return
+      }
+      // 그 외(네트워크 순단 등)는 지수 백오프로 재연결: 간격을 매번 2배로 늘리되 최대 5초.
       retryTimer = setTimeout(open, retryMs)
       retryMs = Math.min(retryMs * 2, 5000)
     }

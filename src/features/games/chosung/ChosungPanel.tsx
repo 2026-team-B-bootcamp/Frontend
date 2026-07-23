@@ -1,19 +1,21 @@
 /**
- * 끝말잇기(폭탄 돌리기) 게임 패널.
+ * 초성퀴즈(폭탄 돌리기) 게임 패널.
+ * 서버와의 통신(api.ts, 내부적으로 shared/api/client 경유)과 폭탄 도화선 카운트다운,
+ * 초성 단어 제출을 담당한다. 초성이 맞는지·중복인지의 판정은 서버가 하고, 이 컴포넌트는
+ * 그 결과만 받아 화면에 반영한다.
  * 규칙: 판 전체에 딱 하나 걸린 2분짜리 도화선이 계속 타들어가고, 시간이 다 되는 순간
- * 폭탄을 든 사람 한 명이 패배한다. 앞 단어의 끝글자로 잇는 단어를 대면 폭탄을 다음
- * 사람에게 넘길 뿐 시간은 리셋되지 않는다. 단어 규칙 검증은 서버가 판정한다.
- * 흐름: 이 패널 → wordchain/api.ts → 백엔드 끝말잇기 라우터.
+ * 폭탄을 든 사람 한 명이 패배한다. 맞히면 폭탄을 다음 사람에게 넘길 뿐 시간은 리셋되지 않는다.
+ * 흐름: 이 패널 → chosung/api.ts → 백엔드 초성퀴즈 라우터.
  */
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
 import {
-  getWordChain,
-  joinWordChain,
-  startWordChain,
-  submitWord,
-  type WordChainState,
+  getChosung,
+  joinChosung,
+  startChosung,
+  submitChosung,
+  type ChosungState,
 } from './api'
 import { ApiError } from '../../../shared/api/client'
 import { fireWinConfetti } from '../../../shared/lib/confetti'
@@ -21,7 +23,7 @@ import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
 
 const FUSE_TOTAL = 120
 
-// 폭탄 도화선 — 남은 시간에 비례해 줄어드는 심지 막대 + 💣. 20초 이하면 danger. (초성퀴즈와 동일 비주얼)
+// 폭탄 도화선 — 남은 시간에 비례해 줄어드는 심지 막대 + 💣 아이콘. 20초 이하면 danger.
 function Fuse({ seconds }: { seconds: number }) {
   const ratio = Math.max(0, Math.min(1, seconds / FUSE_TOTAL))
   const danger = seconds <= 20
@@ -42,7 +44,7 @@ function Fuse({ seconds }: { seconds: number }) {
   )
 }
 
-export function WordChainPanel({
+export function ChosungPanel({
   channelId,
   subscribe,
 }: {
@@ -50,24 +52,24 @@ export function WordChainPanel({
   subscribe: Subscribe
 }) {
   const { userId } = useAuth()
-  const [state, setState] = useState<WordChainState | null>(null)
+  const [state, setState] = useState<ChosungState | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [draft, setDraft] = useState('')
   const [seconds, setSeconds] = useState<number | null>(null)
   const prevStatusRef = useRef<string | null>(null)
-  const chainEndRef = useRef<HTMLDivElement | null>(null)
 
   // 서버 상태가 갱신될 때마다 로컬 카운트다운을 서버 기준으로 다시 맞춘다
-  const [syncedState, setSyncedState] = useState<WordChainState | null>(null)
+  // (렌더 중 상태 보정 패턴 — effect 없이 파생 상태를 동기화)
+  const [syncedState, setSyncedState] = useState<ChosungState | null>(null)
   if (state !== syncedState) {
     setSyncedState(state)
     setSeconds(state?.seconds_left ?? null)
   }
 
   const refetch = useCallback(() => {
-    getWordChain(channelId)
+    getChosung(channelId)
       .then((s) => setState(s))
       .catch(() => {
         // 일시적 실패는 마지막 상태 유지
@@ -79,11 +81,12 @@ export function WordChainPanel({
     refetch()
   }, [refetch])
 
+  // WS로 전체 상태가 그대로 내려오고, 재연결 시엔 다시 가져온다
   useEffect(
     () =>
       subscribe((e) => {
-        if (e.type === 'wordchain.state') {
-          setState(e.payload as unknown as WordChainState)
+        if (e.type === 'chosung.state') {
+          setState(e.payload as unknown as ChosungState)
         } else if (e.type === 'ws.open') {
           refetch()
         }
@@ -91,8 +94,8 @@ export function WordChainPanel({
     [subscribe, refetch],
   )
 
-  // 로컬 카운트다운: 매초 1씩 줄이다 0이 되면 refetch로 서버의 최신 판정을 받는다
-  // (폭탄이 터지는 패배 처리는 서버 담당, 여기선 표시용 도화선만 탄다)
+  // 로컬 카운트다운: 매초 1씩 줄이다가 0이 되면 refetch로 서버에 최신 판정을 요청한다
+  // (폭탄이 터지는 패배 처리는 서버가 담당하고, 여기선 화면 표시용 도화선만 탄다)
   useEffect(() => {
     if (state?.status !== 'playing' || seconds === null) return
     if (seconds <= 0) {
@@ -103,7 +106,7 @@ export function WordChainPanel({
     return () => clearTimeout(t)
   }, [seconds, state?.status, refetch])
 
-  // playing → finished 순간, 내가 패자가 아니라면(살아남았으면) 컨페티
+  // playing → finished로 바뀐 순간, 내가 패자가 아니라면(살아남았으면) 컨페티를 터뜨린다
   useEffect(() => {
     if (
       state?.status === 'finished' &&
@@ -116,11 +119,8 @@ export function WordChainPanel({
     prevStatusRef.current = state?.status ?? null
   }, [state, userId])
 
-  useEffect(() => {
-    chainEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [state?.words.length])
-
-  async function run(fn: () => Promise<WordChainState>) {
+  // 참여/시작/제출 등 서버에 변경을 요청하는 모든 액션의 공통 래퍼.
+  async function run(fn: () => Promise<ChosungState>) {
     setBusy(true)
     setError(null)
     try {
@@ -134,11 +134,12 @@ export function WordChainPanel({
     }
   }
 
+  // 입력창의 단어를 서버로 제출한다. 초성 일치 검증은 서버가 하고, 성공한 경우에만 비운다.
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     const word = draft.trim()
     if (!word) return
-    const ok = await run(() => submitWord(channelId, word))
+    const ok = await run(() => submitChosung(channelId, word))
     if (ok) setDraft('')
   }
 
@@ -149,10 +150,10 @@ export function WordChainPanel({
       <div className="panel-empty">
         {error && <div className="error">{error}</div>}
         <p className="muted panel-note">
-          아직 게임이 없어요. 끝말잇기 폭탄 돌리기로 아이스브레이킹! 2분 도화선이 다 타기
-          전에 끝말을 이어 폭탄을 넘기세요. 터질 때 든 사람이 벌칙!
+          아직 게임이 없어요. 초성퀴즈 폭탄 돌리기로 아이스브레이킹! 2분 도화선이 다 타기
+          전에 초성에 맞는 단어를 대고 폭탄을 넘기세요. 터질 때 든 사람이 벌칙!
         </p>
-        <button className="btn" onClick={() => run(() => joinWordChain(channelId))} disabled={busy}>
+        <button className="btn" onClick={() => run(() => joinChosung(channelId))} disabled={busy}>
           게임 열기
         </button>
       </div>
@@ -162,12 +163,9 @@ export function WordChainPanel({
   const me = state.players.find((p) => p.user_id === userId)
   const myTurn = state.turn_user_id === userId
   const turnPlayer = state.players.find((p) => p.user_id === state.turn_user_id)
-  const lastWord = state.words.at(-1)
-  // 다음 단어가 시작해야 할 글자(화면 힌트용). 실제 두음법칙 등 검증은 서버가 한다.
-  const nextChar = lastWord ? lastWord.word.at(-1) : null
 
   return (
-    <div className="wc-panel">
+    <div className="cho-panel">
       {error && <div className="error">{error}</div>}
 
       <div className="panel-scorebar">
@@ -176,7 +174,9 @@ export function WordChainPanel({
             key={p.user_id}
             className={`score${
               state.status === 'finished' && p.user_id === state.loser_user_id ? ' dead' : ''
-            }${state.status === 'playing' && p.user_id === state.turn_user_id ? ' turn' : ''}`}
+            }${
+              state.status === 'playing' && p.user_id === state.turn_user_id ? ' turn' : ''
+            }`}
           >
             {state.status === 'playing' && p.user_id === state.turn_user_id && '💣 '}
             {p.display_name}
@@ -185,7 +185,7 @@ export function WordChainPanel({
         ))}
       </div>
 
-      {state.last_event && <div className="wc-event">{state.last_event}</div>}
+      {state.last_event && <div className="cho-event">{state.last_event}</div>}
 
       {state.status === 'waiting' && (
         <div className="panel-empty">
@@ -195,7 +195,7 @@ export function WordChainPanel({
           {me === undefined ? (
             <button
               className="btn"
-              onClick={() => run(() => joinWordChain(channelId))}
+              onClick={() => run(() => joinChosung(channelId))}
               disabled={busy}
             >
               참여하기
@@ -203,7 +203,7 @@ export function WordChainPanel({
           ) : (
             <button
               className="btn"
-              onClick={() => run(() => startWordChain(channelId))}
+              onClick={() => run(() => startChosung(channelId))}
               disabled={busy || state.players.length < 2}
             >
               시작하기
@@ -216,47 +216,45 @@ export function WordChainPanel({
         <>
           {seconds !== null && <Fuse seconds={seconds} />}
 
-          <div className="wc-turnbar">
-            <div className="wc-turn-info">
-              <div className="wc-turn-name">
-                {myTurn ? '💣 내 차례! 얼른 넘기세요' : `${turnPlayer?.display_name ?? '?'}님이 폭탄 보유`}
-              </div>
-              {nextChar && (
-                <div className="muted" style={{ fontSize: 12 }}>
-                  <b className="wc-next-char">{nextChar}</b>(으)로 시작 · 두음법칙 인정
-                </div>
+          <div className="cho-stage">
+            <div className="cho-prompt">{state.prompt}</div>
+            <div className="cho-holder">
+              {myTurn ? (
+                <b className="cho-holder-me">내 손에 폭탄이 있어요!</b>
+              ) : (
+                <span>
+                  <b>{turnPlayer?.display_name ?? '?'}</b>님이 폭탄을 들고 있어요
+                </span>
               )}
             </div>
           </div>
 
-          <div className="wc-chain">
-            {state.words.length === 0 ? (
-              <p className="muted panel-note">첫 단어는 자유! 아무 단어나 시작하세요.</p>
-            ) : (
+          {state.words.length > 0 && (
+            <div className="cho-history">
               <AnimatePresence initial={false}>
                 {state.words.map((w, i) => (
                   <motion.span
-                    key={`${i}-${w.word}`}
-                    className={`wc-chip${w.user_id === userId ? ' mine' : ''}`}
+                    key={`${i}-${w}`}
+                    className="cho-chip"
                     initial={{ opacity: 0, scale: 0.7, y: 8 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ type: 'spring', stiffness: 420, damping: 26 }}
                   >
-                    <span className="wc-chip-word">{w.word}</span>
-                    <span className="wc-chip-author">{w.display_name}</span>
+                    {w}
                   </motion.span>
                 ))}
               </AnimatePresence>
-            )}
-            <div ref={chainEndRef} />
-          </div>
+            </div>
+          )}
 
-          <form className="wc-input" onSubmit={onSubmit}>
+          <form className="cho-input" onSubmit={onSubmit}>
             <input
               className="input"
-              placeholder={myTurn ? '끝말 이을 단어…' : '내 차례를 기다리는 중…'}
+              placeholder={
+                myTurn ? `'${state.prompt}' 초성 단어…` : '내 차례를 기다리는 중…'
+              }
               value={draft}
-              maxLength={10}
+              maxLength={3}
               disabled={!myTurn || busy}
               onChange={(e) => setDraft(e.target.value)}
             />
@@ -283,13 +281,11 @@ export function WordChainPanel({
                 }님 손에서 폭탄이 터졌어요!`}
           </motion.div>
           {state.words.length > 0 && (
-            <p className="muted panel-note">
-              이번 판 단어 {state.words.length}개 — 마지막 단어 "{lastWord?.word}"
-            </p>
+            <p className="muted panel-note">이번 판 정답 {state.words.length}개</p>
           )}
           <button
             className="btn"
-            onClick={() => run(() => joinWordChain(channelId))}
+            onClick={() => run(() => joinChosung(channelId))}
             disabled={busy}
           >
             새 라운드 열기

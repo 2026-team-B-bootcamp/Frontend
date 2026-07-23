@@ -24,7 +24,7 @@ export interface WordChainState {
   players: WordChainPlayer[]
   turn_user_id: number | null
   words: WordEntry[]
-  winner_user_id: number | null
+  loser_user_id: number | null
   seconds_left: number | null
   last_event: string | null
 }
