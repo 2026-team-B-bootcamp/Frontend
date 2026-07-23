@@ -8,7 +8,7 @@ import { useAuth } from '../auth/authContext'
 import { getMembers, type Member } from '../servers/api'
 import { TagPills } from '../users/TagPills'
 import { ApiError } from '../../shared/api/client'
-import { avatarColor } from '../../shared/lib/colors'
+import { Avatar } from '../../shared/ui/Avatar'
 
 export function MembersPanel({ serverId, online }: { serverId: number; online: Set<number> }) {
   const { userId } = useAuth()
@@ -44,18 +44,21 @@ export function MembersPanel({ serverId, online }: { serverId: number; online: S
     <div>
       <div className="panel-title">멤버 — {members.length}</div>
       {error && <div className="error">{error}</div>}
-      {/* 접속 중인 멤버가 위로 오도록 정렬 */}
+      {/* 내가 맨 위 → 그다음 접속 중인 사람 → 나머지.
+          내 태그가 어떻게 보이는지 늘 첫 줄에서 확인할 수 있게 나를 고정한다. */}
       {[...members]
-        .sort((a, b) => Number(online.has(b.user_id)) - Number(online.has(a.user_id)))
+        .sort((a, b) => {
+          if (a.user_id === userId) return -1
+          if (b.user_id === userId) return 1
+          return Number(online.has(b.user_id)) - Number(online.has(a.user_id))
+        })
         .map((m) => {
         const me = m.user_id === userId
         const isOnline = online.has(m.user_id)
         return (
-          <div key={m.user_id} className="member-row">
+          <div key={m.user_id} className={`member-row${me ? ' me' : ''}`}>
             <div className="member-avatar-wrap">
-              <div className="chat-avatar" style={{ background: avatarColor(m.user_id) }}>
-                {m.display_name.charAt(0)}
-              </div>
+              <Avatar userId={m.user_id} name={m.display_name} url={m.avatar_url} size={36} />
               <span className={`presence-dot${isOnline ? ' on' : ''}`} />
             </div>
             <div className="member-info">

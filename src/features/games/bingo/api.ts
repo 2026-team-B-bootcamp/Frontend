@@ -10,6 +10,13 @@ export interface BingoPlayer {
   completed_lines: number
 }
 
+// 호출 기록 한 줄 — 몇 번째로 누가 어떤 숫자를 불렀는지
+export interface BingoCall {
+  number: number
+  user_id: number
+  display_name: string
+}
+
 // 서버가 내려주는 빙고 게임의 현재 상태 — 진행 중인 라운드가 없으면 null(404)로 처리됨
 export interface BingoState {
   status: 'waiting' | 'playing' | 'finished'
@@ -17,6 +24,10 @@ export interface BingoState {
   my_board: number[] | null
   players: BingoPlayer[]
   winner_user_id: number | null
+  // 지금 숫자를 부를 차례인 사람 (진행 중이 아니면 null)
+  turn_user_id: number | null
+  // 호출된 순서 그대로의 기록. called_numbers는 정렬된 집합이라 순서를 알 수 없다.
+  call_log: BingoCall[]
 }
 
 // 게임 참여(또는 새 라운드 시작) 요청 — 서버가 내 새 보드를 만들어 최신 상태를 돌려준다

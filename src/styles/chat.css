@@ -229,34 +229,78 @@
   background: rgba(255, 255, 255, 0.75);
 }
 
+/* 내 프로필 패널 (사이드바 하단) — 아바타 + 이름 + 프로필 편집 안내.
+   패널 본체 전체가 프로필을 여는 버튼이고, 로그아웃만 아이콘으로 따로 뺐다. */
 .sidebar-me {
   margin-top: auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px;
+  gap: 6px;
+  padding: 8px;
   border-top: 1px solid rgba(25, 26, 35, 0.14);
-  color: var(--text-h);
-  font-size: 14px;
-  font-weight: 600;
 }
 
-.sidebar-me-actions {
+.sidebar-me-main {
+  flex: 1;
+  min-width: 0;
   display: flex;
+  align-items: center;
   gap: 10px;
-}
-
-.sidebar-me button {
+  padding: 6px;
   border: none;
+  border-radius: 14px;
   background: none;
-  color: rgba(25, 26, 35, 0.65);
-  font-size: 12px;
-  padding: 0;
+  text-align: left;
+  transition: background 160ms var(--ease);
 }
 
-.sidebar-me button:hover {
+.sidebar-me-main:hover {
+  background: var(--hover);
+}
+
+.sidebar-me-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.sidebar-me-name {
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 평소엔 옅게 있다가 패널에 마우스를 올리면 또렷해진다 */
+.sidebar-me-sub {
+  font-size: 11px;
+  color: var(--text-faint);
+  transition: color 160ms var(--ease);
+}
+
+.sidebar-me-main:hover .sidebar-me-sub {
+  color: var(--accent-text);
+}
+
+.sidebar-me-logout {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  color: var(--text-faint);
+  transition: background 160ms var(--ease), color 160ms var(--ease);
+}
+
+.sidebar-me-logout:hover {
+  background: var(--accent-bg);
+  color: var(--danger);
 }
 
 /* ---------- 채팅 메인 ---------- */
@@ -1391,4 +1435,116 @@
   .chat-header-links {
     max-width: 62%;
   }
+}
+
+/* ---------- 내 메시지 오른쪽 정렬 · 삭제 · 환영 카드 ---------- */
+
+/* 내가 보낸 메시지는 좌우를 뒤집어 오른쪽에 붙인다(아바타도 오른쪽).
+   row-reverse만으로 아바타·본문·시간 순서가 전부 자연스럽게 반대가 된다. */
+.chat-row.mine {
+  flex-direction: row-reverse;
+}
+
+.chat-row.mine .chat-head {
+  flex-direction: row-reverse;
+}
+
+.chat-row.mine .chat-text {
+  text-align: left;
+}
+
+/* 본문 블록 자체를 오른쪽으로 몰아 말풍선처럼 보이게 한다 */
+.chat-row.mine .chat-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* 텍스트가 짧아도 오른쪽 끝에 붙되, 길면 줄바꿈되도록 폭 상한만 준다 */
+.chat-row.mine .chat-text,
+.chat-row.mine .chat-media-link,
+.chat-row.mine .link-preview,
+.chat-row.mine .yt-embed {
+  max-width: 100%;
+}
+
+.chat-body {
+  position: relative;
+}
+
+/* 삭제 버튼 — 평소엔 숨어 있다가 그 행에 마우스를 올리면 나타난다 */
+.chat-delete {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-faint);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms var(--ease), color 150ms var(--ease), background 150ms var(--ease);
+}
+
+/* 내 메시지는 오른쪽 정렬이라 삭제 버튼을 왼쪽 바깥에 둔다(본문과 겹치지 않게) */
+.chat-row.mine .chat-delete {
+  right: auto;
+  left: 0;
+}
+
+.chat-row:hover .chat-delete,
+.chat-delete:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-delete:hover {
+  background: var(--accent-bg);
+  color: var(--danger);
+}
+
+/* 터치 기기엔 hover가 없다 — 항상 보이게 두되 눈에 덜 띄는 투명도로 */
+@media (hover: none) {
+  .chat-delete {
+    opacity: 0.5;
+    pointer-events: auto;
+  }
+}
+
+/* 첫 입장 환영·자기소개 카드 — 말풍선이 아니라 가운데 놓이는 안내 카드 */
+.chat-welcome {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 10px 16px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(145, 104, 192, 0.1), rgba(27, 161, 227, 0.1));
+}
+
+.chat-welcome-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.chat-welcome-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.chat-welcome-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-h);
 }
