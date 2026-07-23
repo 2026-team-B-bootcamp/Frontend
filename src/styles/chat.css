@@ -1489,36 +1489,117 @@
   }
 }
 
-/* 첫 입장 환영·자기소개 카드 — 말풍선이 아니라 가운데 놓이는 안내 카드 */
+/* 첫 입장 등장 소개 카드 — "새 사람이 왔다"가 한눈에 보이도록 채팅 흐름에서 확 튀게 만든다.
+   3색 그라디언트 테두리 + 안쪽 흰 면 구조라, 배경이 흰 채팅 로그 위에서 카드만 떠 보인다. */
 .chat-welcome {
+  position: relative;
+  margin: 14px 16px;
+  padding: 2px;
+  border-radius: 20px;
+  background: linear-gradient(115deg, #9168c0, #1ba1e3 45%, var(--lime));
+  box-shadow: 0 10px 26px rgba(86, 132, 209, 0.22);
+  overflow: hidden;
+}
+
+/* 테두리 위를 천천히 도는 빛 — 카드가 "살아 있다"는 느낌을 준다.
+   transform 애니메이션이라 사파리에서도 안전하다(background-position은 무시된다). */
+.chat-welcome-glow {
+  position: absolute;
+  top: -60%;
+  left: -30%;
+  width: 45%;
+  height: 220%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(0) skewX(-18deg);
+  animation: welcome-sweep 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes welcome-sweep {
+  0%,
+  15% {
+    transform: translateX(0) skewX(-18deg);
+  }
+  70%,
+  100% {
+    transform: translateX(560%) skewX(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-welcome-glow {
+    display: none;
+  }
+}
+
+/* 그라디언트 테두리 안쪽 면 */
+.chat-welcome-inner {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 10px 16px;
-  padding: 12px 14px;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(145, 104, 192, 0.1), rgba(27, 161, 227, 0.1));
+  background: var(--surface);
+}
+
+/* 아바타에 흰 링을 둘러 그라디언트 위에서도 또렷하게 */
+.chat-welcome-avatar {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px rgba(145, 104, 192, 0.35);
 }
 
 .chat-welcome-body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
+/* "NEW MEMBER" 배지 — 그라디언트 글자로 AI 스파크와 같은 계열임을 표시 */
 .chat-welcome-label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
+  gap: 5px;
+  font-family: var(--display);
+  font-size: 10.5px;
   font-weight: 700;
-  color: var(--text-faint);
+  letter-spacing: 0.12em;
+  background: linear-gradient(100deg, #9168c0, #1ba1e3);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 아이콘은 그라디언트 텍스트 클립의 영향을 받지 않게 원래 색을 유지시킨다 */
+.chat-welcome-label svg {
+  flex-shrink: 0;
 }
 
 .chat-welcome-text {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.55;
   color: var(--text-h);
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .chat-welcome {
+    margin: 12px 10px;
+  }
+
+  .chat-welcome-inner {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .chat-welcome-text {
+    font-size: 14px;
+  }
 }

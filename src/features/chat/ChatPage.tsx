@@ -26,6 +26,7 @@ import { useGamesStatus } from '../games/gamesStatus'
 import { WatchTogether } from '../watch/WatchTogether'
 import { Whiteboard } from '../draw/Whiteboard'
 import { ChatRoom } from './ChatRoom'
+import { createWelcome } from './api'
 import { MembersPanel } from './MembersPanel'
 import { CloseIcon, DiceIcon, MenuIcon, PaletteIcon, TvIcon, UsersIcon } from '../../shared/ui/icons'
 import { useChannelSocket } from '../../shared/realtime/useChannelSocket'
@@ -413,7 +414,14 @@ export function ChatPage() {
               // 닫았다는 사실을 남겨 이 서버에선 다시 묻지 않는다
               localStorage.setItem(`tag_setup_skipped_${sid}`, '1')
             }}
-            onSaved={() => setMembersRefresh((k) => k + 1)}
+            onSaved={() => {
+              setMembersRefresh((k) => k + 1)
+              // 태그를 막 등록했으니 이제 등장 소개를 만들 수 있다.
+              // 백엔드는 태그가 없으면 카드를 만들지 않으므로(맹탕 카드가 "채널당 1회"를
+              // 소진하는 것을 막기 위해), 등록 직후인 여기서 다시 부르는 게 실제 생성 시점이다.
+              // 만들어진 카드는 WebSocket(message.new)으로 ChatRoom에 도착한다.
+              if (Number.isFinite(cid)) void createWelcome(cid).catch(() => {})
+            }}
           />
         )}
       </AnimatePresence>

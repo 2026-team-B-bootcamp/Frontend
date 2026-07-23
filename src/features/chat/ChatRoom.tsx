@@ -553,21 +553,30 @@ export function ChatRoom({
                 {newDay && <div className="chat-day">{dayLabel(m.created_at)}</div>}
                 {/* 첫 입장 환영·자기소개 카드는 말풍선이 아니라 가운데 카드로 그린다 */}
                 {m.kind === 'welcome' ? (
-                  <div className="chat-welcome">
-                    <Avatar
-                      userId={m.user_id}
-                      name={m.display_name}
-                      url={m.avatar_url}
-                      size={32}
-                    />
-                    <div className="chat-welcome-body">
-                      <span className="chat-welcome-label">
-                        <SparkIcon size={12} /> 환영합니다
-                      </span>
-                      <p className="chat-welcome-text">{m.content}</p>
-                      {hasTags && <TagPills tags={m.tags} />}
+                  <motion.div
+                    className="chat-welcome"
+                    initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.42, ease: [0.34, 1.56, 0.64, 1] }}
+                  >
+                    <span className="chat-welcome-glow" aria-hidden="true" />
+                    <div className="chat-welcome-inner">
+                      <Avatar
+                        userId={m.user_id}
+                        name={m.display_name}
+                        url={m.avatar_url}
+                        size={46}
+                        className="chat-welcome-avatar"
+                      />
+                      <div className="chat-welcome-body">
+                        <span className="chat-welcome-label">
+                          <SparkIcon size={13} /> NEW MEMBER
+                        </span>
+                        <p className="chat-welcome-text">{m.content}</p>
+                        {hasTags && <TagPills tags={m.tags} />}
+                      </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ) : (
                 <div className={`chat-row${grouped ? ' grouped' : ''}`}>
                   {grouped ? (
