@@ -32,6 +32,14 @@ import { CloseIcon, DiceIcon, MenuIcon, PaletteIcon, TvIcon, UsersIcon } from '.
 import { useChannelSocket } from '../../shared/realtime/useChannelSocket'
 import { PANEL_OVERLAY_QUERY, useIsMobile, useMediaQuery } from '../../shared/lib/useMediaQuery'
 
+// "나중에 하기"를 기억하는 localStorage 키.
+// 반드시 userId까지 넣어야 한다 — 예전엔 서버 id만 썼더니 같은 브라우저에서 계정을 바꿔가며
+// 쓸 때(데모·테스트에서 늘 하는 일) A가 한 번 미룬 서버는 B에게도 영영 안 떴다.
+// B는 태그가 하나도 없는 첫 방문자인데 온보딩을 통째로 건너뛰는 셈이라 치명적이었다.
+function tagSetupSkipKey(userId: number, serverId: number) {
+  return `tag_setup_skipped_${userId}_${serverId}`
+}
+
 export function ChatPage() {
   const { serverId, channelId } = useParams()
   const sid = Number(serverId)
@@ -102,7 +110,7 @@ export function ChatPage() {
   // "나중에 하기"를 누르면 그 서버에선 다시 묻지 않는다(localStorage).
   useEffect(() => {
     if (!Number.isFinite(sid) || userId == null) return
-    if (localStorage.getItem(`tag_setup_skipped_${sid}`) === '1') return
+    if (localStorage.getItem(tagSetupSkipKey(userId, sid)) === '1') return
     let active = true
     getMembers(sid)
       .then((ms) => {
@@ -412,7 +420,7 @@ export function ChatPage() {
             onClose={() => {
               setShowTagSetup(false)
               // 닫았다는 사실을 남겨 이 서버에선 다시 묻지 않는다
-              localStorage.setItem(`tag_setup_skipped_${sid}`, '1')
+              if (userId != null) localStorage.setItem(tagSetupSkipKey(userId, sid), '1')
             }}
             onSaved={() => {
               setMembersRefresh((k) => k + 1)
