@@ -25,3 +25,16 @@ export function login(email: string, password: string) {
 export function logout() {
   return apiFetch<void>('/auth/logout', { method: 'POST' })
 }
+
+export interface MeResponse {
+  id: number
+  email: string
+  display_name: string
+  avatar_url: string | null
+}
+
+// 내 프로필 조회 — AuthContext가 진입 시 이름·사진을 서버 값으로 맞추는 데 쓴다.
+// (users/api.ts의 getMe와 같은 엔드포인트지만, auth 계층이 users 기능에 의존하지 않도록 여기 둔다)
+export function getMe() {
+  return apiFetch<MeResponse>('/users/me')
+}
