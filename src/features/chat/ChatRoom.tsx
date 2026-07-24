@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import { getMembers, type Member } from '../servers/api'
@@ -58,6 +59,18 @@ function dayLabel(iso: string) {
     day: 'numeric',
     weekday: 'long',
   })
+}
+
+// 게임 입장 카드에 쓸 이름표. 백엔드는 content에 게임 키만 담아 보내므로
+// (문구를 서버에 굳혀두면 표현을 바꿔도 이미 쌓인 메시지는 옛 문구로 남는다)
+// 그릴 때 여기서 문구를 만든다. Backend/app/slack/features.py의 라벨과 맞춰둔다.
+const GAME_LABELS: Record<string, string> = {
+  bingo: '🎲 빙고',
+  wordchain: '🔤 끝말잇기',
+  omok: '⚫ 오목',
+  tictactoe: '⭕ 틱택토',
+  balance: '⚖️ 밸런스게임',
+  chosung: '🔠 초성퀴즈',
 }
 
 export function ChatRoom({
@@ -566,8 +579,31 @@ export function ChatRoom({
                 transition={{ duration: 0.18, ease: 'easeOut' }}
               >
                 {newDay && <div className="chat-day">{dayLabel(m.created_at)}</div>}
-                {/* 첫 입장 환영·자기소개 카드는 말풍선이 아니라 가운데 카드로 그린다 */}
-                {m.kind === 'welcome' ? (
+                {/* 게임이 새로 열렸다는 알림 — 채팅만 보던 사람도 바로 들어갈 수 있게
+                    입장 버튼을 함께 둔다. content에는 게임 키만 들어있다. */}
+                {m.kind === 'game' ? (
+                  <div className="chat-game-card">
+                    <Avatar
+                      userId={m.user_id}
+                      name={m.display_name}
+                      url={m.avatar_url}
+                      size={34}
+                    />
+                    <div className="chat-game-body">
+                      <p className="chat-game-text">
+                        <b>{m.display_name}</b>님이{' '}
+                        <b>{GAME_LABELS[m.content] ?? m.content}</b> 게임을 열었어요!
+                      </p>
+                      <span className="chat-game-time">{timeLabel(m.created_at)}</span>
+                    </div>
+                    <Link
+                      className="chat-game-join"
+                      to={`/servers/${serverId}/channels/${channelId}/play/${m.content}`}
+                    >
+                      입장하기
+                    </Link>
+                  </div>
+                ) : m.kind === 'welcome' ? (
                   <motion.div
                     className="chat-welcome"
                     initial={{ opacity: 0, scale: 0.96, y: 10 }}
@@ -605,8 +641,6 @@ export function ChatRoom({
                         <span className="chat-name" style={{ color: avatarColor(m.user_id) }}>
                           {m.display_name}
                         </span>
-                        {/* 발신자 이름 옆 관심사 태그 (겹치는 태그 하이라이트는 common prop이 있을 때만) */}
-                        {hasTags && <TagPills tags={m.tags} />}
                         <span className="chat-time">{timeLabel(m.created_at)}</span>
                       </div>
                     )}
@@ -623,6 +657,10 @@ export function ChatRoom({
                       </button>
                     )}
                     <div className="chat-text">{renderRichText(m.content)}</div>
+                    {/* 관심사 태그는 메시지 아래에 둔다. 이름 옆은 자리가 좁아 길면
+                        잘리고 시간·이름과 섞여 잘 안 읽혔다. 묶인 연속 메시지에는
+                        붙이지 않는다 — 한 사람이 여러 줄 쓰면 태그가 줄마다 반복된다. */}
+                    {!grouped && hasTags && <TagPills tags={m.tags} />}
                     {(() => {
                       // renderRichText가 이미 이미지/유튜브 단독 메시지는 임베드하므로 그 경우는 건너뛴다.
                       const trimmed = m.content.trim()
