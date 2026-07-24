@@ -32,11 +32,14 @@ export function Whiteboard({
   subscribe,
   onClose,
   constraintsRef,
+  embedded = false,
 }: {
   channelId: number
   subscribe: Subscribe
   onClose: () => void
   constraintsRef: RefObject<HTMLElement | null>
+  // 전용 페이지(/play/draw)에서는 떠다니는 창이 아니라 화면을 채우는 한 덩어리다.
+  embedded?: boolean
 }) {
   const [width, setWidth] = useState(() => clamp(340, MIN_W, maxW()))
   const [color, setColor] = useState(COLORS[0])
@@ -47,7 +50,7 @@ export function Whiteboard({
   const resizeRef = useRef<{ x: number; w: number } | null>(null)
   const pipRef = useRef<HTMLDivElement>(null)
   // 창 크기·뷰포트가 바뀌어도 채팅 본문 밖으로 나가지 않게 경계를 계속 다시 잰다
-  const { x, y, dragConstraints } = usePipDrag(pipRef, constraintsRef, !isMobile)
+  const { x, y, dragConstraints } = usePipDrag(pipRef, constraintsRef, !isMobile && !embedded)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   // 지금까지 그려진 모든 획 — 캔버스 리사이즈 시 전체를 다시 그리는 데 쓴다
@@ -254,9 +257,9 @@ export function Whiteboard({
   return (
     <motion.div
       ref={pipRef}
-      className="wb-pip"
-      style={isMobile ? { x, y } : { width, x, y }}
-      drag={!isMobile}
+      className={embedded ? 'wb-pip embedded' : 'wb-pip'}
+      style={embedded ? undefined : isMobile ? { x, y } : { width, x, y }}
+      drag={!isMobile && !embedded}
       dragListener={false}
       dragControls={dragControls}
       dragConstraints={dragConstraints}
@@ -269,7 +272,7 @@ export function Whiteboard({
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 게임 PIP와 동일한 그립 스타일 재사용 */}
-      {!isMobile && (
+      {!isMobile && !embedded && (
         <div
           className="game-pip-resize"
           onPointerDown={onResizeStart}

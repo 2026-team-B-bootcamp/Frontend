@@ -16,6 +16,11 @@ const ServerListPage = lazy(() =>
 const ChatPage = lazy(() =>
   import('./features/chat/ChatPage').then((m) => ({ default: m.ChatPage })),
 )
+// 기능 하나만 화면 가득 보여주는 페이지(슬랙 링크의 목적지). 게임 패널을 전부
+// 끌고 오므로 ChatPage와 마찬가지로 lazy로 뗀다.
+const FeaturePage = lazy(() =>
+  import('./features/play/FeaturePage').then((m) => ({ default: m.FeaturePage })),
+)
 
 // 서버 화면과 채널 화면이 같은 element를 공유한다 — 서버만 골라 들어온 경우
 // ChatPage가 채널 목록을 불러와 첫 채널로 replace 이동하는데, 두 라우트가 같은
@@ -47,6 +52,17 @@ function App() {
         />
         <Route path="/servers/:serverId" element={chatElement} />
         <Route path="/servers/:serverId/channels/:channelId" element={chatElement} />
+        {/* 기능 하나만 있는 전용 화면. 슬랙 봇이 발급하는 입장 링크가 여기로 온다 —
+            "빙고 하자"로 들어온 사람에게 채팅방 위 작은 PIP를 주면 정작 하러 온 것이
+            곁다리로 보이기 때문이다. 채널·실시간 연결은 채팅방과 같아 같은 판에서 만난다. */}
+        <Route
+          path="/servers/:serverId/channels/:channelId/play/:feature"
+          element={
+            <RequireAuth>
+              <FeaturePage />
+            </RequireAuth>
+          }
+        />
         {/* 예전 채널 경로는 서버 구조로 통합됨 */}
         <Route path="/channels/*" element={<Navigate to="/servers" replace />} />
         <Route path="*" element={<Navigate to="/servers" replace />} />
