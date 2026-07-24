@@ -22,6 +22,7 @@ import { ServerAddModal } from '../servers/ServerAddModal'
 import { ProfileModal } from '../users/ProfileModal'
 import { TagSetupModal } from '../users/TagSetupModal'
 import { GamePip } from '../games/GamePip'
+import { isGameKind } from '../games/gameKinds'
 import { useGamesStatus } from '../games/gamesStatus'
 import { WatchTogether } from '../watch/WatchTogether'
 import { Whiteboard } from '../draw/Whiteboard'
@@ -64,12 +65,20 @@ export function ChatPage() {
   const closeNav = () => setNavRequested(false)
   // 멤버 사이드 패널과 미니게임 PIP는 서로 독립적으로 열고 닫는다.
   // 패널이 오버레이로 뜨는 폭에선 채팅을 가리므로 기본은 닫힌 상태로 시작한다.
-  const [showMembers, setShowMembers] = useState(
-    () => !window.matchMedia(PANEL_OVERLAY_QUERY).matches,
+  // 슬랙 봇이 준 링크(...?open=bingo)로 들어왔는지 첫 렌더에 읽는다.
+  // effect로 미루면 패널이 한 프레임 늦게 열려 화면이 깜빡이고, 슬랙에서
+  // "빙고 하자"를 누른 사람이 도착하자마자 빙고를 봐야 흐름이 안 끊긴다.
+  const [entryOpen] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get('open'),
   )
-  const [gameOpen, setGameOpen] = useState(false)
-  const [watchOpen, setWatchOpen] = useState(false)
-  const [drawOpen, setDrawOpen] = useState(false)
+  const entryGameKind = entryOpen && isGameKind(entryOpen) ? entryOpen : undefined
+
+  const [showMembers, setShowMembers] = useState(
+    () => entryOpen === 'members' || !window.matchMedia(PANEL_OVERLAY_QUERY).matches,
+  )
+  const [gameOpen, setGameOpen] = useState(entryGameKind !== undefined)
+  const [watchOpen, setWatchOpen] = useState(entryOpen === 'watch')
+  const [drawOpen, setDrawOpen] = useState(entryOpen === 'draw')
   // 게임 PIP의 드래그 경계 — 채팅 본문 안에서만 움직이게 한다
   const chatMainRef = useRef<HTMLElement>(null)
   const [showProfile, setShowProfile] = useState(false)
@@ -83,6 +92,16 @@ export function ChatPage() {
   // 진행 중인 게임이 있으면 헤더 미니게임 아이콘에 라이브 점을 띄워 관전을 유도한다
   const gameStatuses = useGamesStatus(cid, subscribe)
   const anyGameLive = Object.values(gameStatuses).some((s) => s === 'playing')
+
+  // ?open= 을 주소에서 지운다. 위에서 이미 읽어 초기 상태에 반영했고, 남겨두면
+  // 새로고침·뒤로가기마다 패널이 다시 열려 사용자가 닫아도 계속 튀어나온다.
+  // (토큰 ?t= 는 main.tsx가 첫 렌더 전에 처리해 이미 지웠다)
+  useEffect(() => {
+    if (!entryOpen) return
+    const url = new URL(window.location.href)
+    url.searchParams.delete('open')
+    window.history.replaceState({}, '', url.toString())
+  }, [entryOpen])
 
   // 서버 레일에 보여줄 내가 속한 서버 목록을 백엔드에서 가져온다
   useEffect(() => {
@@ -309,6 +328,7 @@ export function ChatPage() {
               onClose={() => setGameOpen(false)}
               constraintsRef={chatMainRef}
               statuses={gameStatuses}
+              initialKind={entryGameKind}
             />
           )}
         </AnimatePresence>
