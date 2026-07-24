@@ -39,11 +39,15 @@ export function WatchTogether({
   subscribe,
   onClose,
   constraintsRef,
+  embedded = false,
 }: {
   channelId: number
   subscribe: Subscribe
   onClose: () => void
   constraintsRef: RefObject<HTMLElement | null>
+  // 전용 페이지(/play/watch)에서는 떠다니는 창이 아니라 화면을 채우는 한 덩어리다.
+  // 드래그·리사이즈·인라인 크기를 모두 끄고 배치는 CSS에 맡긴다.
+  embedded?: boolean
 }) {
   const [state, setState] = useState<WatchState | null>(null)
   const [url, setUrl] = useState('')
@@ -55,7 +59,7 @@ export function WatchTogether({
   const resizeRef = useRef<{ x: number; w: number } | null>(null)
   const pipRef = useRef<HTMLDivElement>(null)
   // 창 크기·뷰포트가 바뀌어도 채팅 본문 밖으로 나가지 않게 경계를 계속 다시 잰다
-  const { x, y, dragConstraints } = usePipDrag(pipRef, constraintsRef, !isMobile)
+  const { x, y, dragConstraints } = usePipDrag(pipRef, constraintsRef, !isMobile && !embedded)
 
   const playerRef = useRef<YTPlayer | null>(null)
   const mountRef = useRef<HTMLDivElement | null>(null)
@@ -242,9 +246,9 @@ export function WatchTogether({
   return (
     <motion.div
       ref={pipRef}
-      className="watch-pip"
-      style={isMobile ? { x, y } : { width, x, y }}
-      drag={!isMobile}
+      className={embedded ? 'watch-pip embedded' : 'watch-pip'}
+      style={embedded ? undefined : isMobile ? { x, y } : { width, x, y }}
+      drag={!isMobile && !embedded}
       dragListener={false}
       dragControls={dragControls}
       dragConstraints={dragConstraints}
@@ -257,7 +261,7 @@ export function WatchTogether({
       transition={{ duration: 0.22, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* 왼쪽 위 리사이즈 핸들 — 헤더 위에 얹히지만 stopPropagation으로 드래그와 충돌하지 않는다 */}
-      {!isMobile && (
+      {!isMobile && !embedded && (
         <div
           className="game-pip-resize"
           onPointerDown={onResizeStart}

@@ -58,7 +58,6 @@ export function GamePip({
   onClose,
   constraintsRef,
   statuses,
-  initialKind,
 }: {
   channelId: number
   subscribe: Subscribe
@@ -66,11 +65,8 @@ export function GamePip({
   constraintsRef: RefObject<HTMLElement | null>
   // 게임 상태는 ChatPage에서 단일 useGamesStatus로 집계해 내려준다(이중 폴링 방지).
   statuses: GamesStatus
-  // 슬랙에서 "빙고 하자"로 들어왔을 때 그 게임을 처음부터 선택해둔다.
-  // 지정이 없으면 웹에서 직접 연 것이므로 기본값(빙고)에서 고르게 한다.
-  initialKind?: GameKind
 }) {
-  const [gameKind, setGameKind] = useState<GameKind>(initialKind ?? 'bingo')
+  const [gameKind, setGameKind] = useState<GameKind>('bingo')
   // 모바일에선 화면 폭을 꽉 채우는 시트로 뜬다 — 드래그·리사이즈·인라인 크기를 모두 CSS에 맡긴다
   const isMobile = useIsMobile()
   // 폭은 처음부터 컴팩트하게 고정, 높이는 null이면 내용에 맞춘다(작은 게임은 작게).

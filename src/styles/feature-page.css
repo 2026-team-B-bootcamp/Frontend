@@ -1,0 +1,106 @@
+/* 기능 전용 페이지 — 슬랙 링크로 들어온 사람이 도착하는 화면.
+   채팅방 위에 떠 있는 PIP와 달리, 하러 온 것 하나만 화면에 둔다. */
+
+.feature-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--surface-2);
+}
+
+.feature-page-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  /* 게임이 길어져 스크롤해도 "채팅으로" 돌아갈 길은 항상 보이게 둔다 */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.feature-page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.feature-page-back:hover {
+  background: var(--surface-3, #eee);
+}
+
+.feature-page-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.feature-page-body {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 24px 20px 40px;
+}
+
+/* 게임·멤버 패널은 그대로 쓰되, 읽기 좋은 폭으로 가운데 모은다 */
+.feature-page-panel {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+/* ---------- 떠다니는 창을 페이지에 눕히기 ----------
+   같이보기·그림판은 원래 PIP다. embedded일 때는 절대배치·그림자·드래그 커서를
+   걷어내고 페이지 흐름 안에 놓는다. 컴포넌트 쪽에서 드래그·리사이즈·인라인
+   크기는 이미 꺼져 있다(embedded prop). */
+
+.watch-pip.embedded,
+.wb-pip.embedded {
+  position: static;
+  width: 100%;
+  max-width: 720px;
+  box-shadow: var(--shadow);
+  /* 드래그를 끄면 motion이 transform을 남기지 않지만, 등장 애니메이션의 scale이
+     남는 경우에 대비해 배치가 흔들리지 않도록 못 박는다 */
+  transform: none;
+}
+
+.watch-pip.embedded .watch-pip-head,
+.wb-pip.embedded .wb-head {
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .feature-page-head {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .feature-page-title {
+    font-size: 0.98rem;
+  }
+
+  .feature-page-body {
+    padding: 14px 12px 28px;
+  }
+
+  .feature-page-panel {
+    padding: 14px;
+    border-radius: 18px;
+  }
+}
