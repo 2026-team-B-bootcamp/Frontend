@@ -1603,3 +1603,59 @@
     font-size: 14px;
   }
 }
+
+/* ---------- 게임 입장 카드 (kind="game") ----------
+   누가 게임을 열면 채팅 흐름에 남는 알림. 말풍선이 아니라 한 줄짜리 배너로
+   두어, 대화를 끊지 않으면서도 눈에 띄고 바로 들어갈 수 있게 한다. */
+
+.chat-game-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.chat-game-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chat-game-text {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.chat-game-time {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.chat-game-join {
+  flex-shrink: 0;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background: var(--accent, #4f46e5);
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+
+.chat-game-join:hover {
+  filter: brightness(1.08);
+}
+
+/* 메시지 아래로 내려온 관심사 태그 — 본문과 붙어 보이지 않게 약간 띄운다 */
+.chat-body > .pills {
+  margin-top: 5px;
+}
