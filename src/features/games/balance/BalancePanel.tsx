@@ -17,6 +17,8 @@ import {
 } from './api'
 import { ApiError } from '../../../shared/api/client'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameEnded } from '../useGameEnded'
 
 function mmss(totalSec: number) {
   const m = Math.floor(totalSec / 60)
@@ -52,6 +54,9 @@ export function BalancePanel({
   useEffect(() => {
     refetch()
   }, [refetch])
+
+  // 방장이 판을 접으면 판 자체가 사라진다 — "게임 없음" 화면으로 되돌린다
+  useGameEnded('balance', subscribe, () => setState(null))
 
   useEffect(
     () =>
@@ -244,6 +249,8 @@ export function BalancePanel({
           새 밸런스 만들기
         </button>
       )}
+
+      <HostEndButton channelId={channelId} kind="balance" hostUserId={state.host_user_id} />
     </div>
   )
 }

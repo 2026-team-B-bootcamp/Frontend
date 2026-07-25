@@ -27,6 +27,8 @@ export interface WordChainState {
   loser_user_id: number | null
   seconds_left: number | null
   last_event: string | null
+  // 이 판을 연 사람(방장). 이 사람만 강제 종료할 수 있다.
+  host_user_id: number | null
 }
 
 export function joinWordChain(channelId: number) {

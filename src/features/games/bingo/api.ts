@@ -28,6 +28,8 @@ export interface BingoState {
   turn_user_id: number | null
   // 호출된 순서 그대로의 기록. called_numbers는 정렬된 집합이라 순서를 알 수 없다.
   call_log: BingoCall[]
+  // 이 판을 연 사람(방장). 이 사람만 강제 종료할 수 있다.
+  host_user_id: number | null
 }
 
 // 게임 참여(또는 새 라운드 시작) 요청 — 서버가 내 새 보드를 만들어 최신 상태를 돌려준다

@@ -11,6 +11,8 @@ import { ApiError } from '../../../shared/api/client'
 import { BingoBoard } from './BingoBoard'
 import { fireWinConfetti } from '../../../shared/lib/confetti'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameEnded } from '../useGameEnded'
 
 export function BingoPanel({
   channelId,
@@ -38,6 +40,9 @@ export function BingoPanel({
   useEffect(() => {
     refetch()
   }, [refetch])
+
+  // 방장이 판을 접으면 판 자체가 사라진다 — "게임 없음" 화면으로 되돌린다
+  useGameEnded('bingo', subscribe, () => setState(null))
 
   useEffect(
     () =>
@@ -163,6 +168,10 @@ export function BingoPanel({
             </button>
           )}
         </div>
+        {/* 대기 로비는 이 패널에서 따로 렌더되는 화면이라, 아래 진행 화면에 붙인
+            강제 종료 버튼이 여기까지 오지 않는다. 정작 판을 접고 싶은 순간이
+            "열어놨는데 아무도 안 들어올 때"라 이 화면에 꼭 있어야 한다. */}
+        <HostEndButton channelId={channelId} kind="bingo" hostUserId={state.host_user_id} />
       </div>
     )
   }
@@ -255,6 +264,8 @@ export function BingoPanel({
           {busy ? '시작 중…' : '새 라운드 시작'}
         </button>
       )}
+
+      <HostEndButton channelId={channelId} kind="bingo" hostUserId={state.host_user_id} />
     </div>
   )
 }

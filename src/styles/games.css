@@ -1008,3 +1008,27 @@
 .bingo-log-who {
   color: var(--text-faint);
 }
+
+
+/* ---------- 방장 전용 강제 종료 ---------- */
+
+/* 게임 패널 맨 아래, 다른 버튼들과 구분되게 선 하나 위에 둔다 —
+   판을 접는 동작이라 "새 라운드" 같은 진행 버튼과 섞이면 안 된다. */
+.host-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.host-end-btn {
+  color: var(--danger);
+  border-color: var(--accent-border);
+}
+
+.host-end-note {
+  font-size: 11px;
+}
