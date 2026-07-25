@@ -10,7 +10,10 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import {
   createChannel,
+  deleteChannel,
+  deleteServer,
   getMembers,
+  leaveServer,
   listChannels,
   listServers,
   renameChannel,
@@ -193,6 +196,18 @@ export function ChatPage() {
             channelCacheRef.current.set(prev.sid, list)
             return { sid: prev.sid, list }
           })
+        } else if (e.type === 'channel.deleted') {
+          const { server_id, channel_id } = e.payload as {
+            server_id: number
+            channel_id: number
+          }
+          dropChannelLocally(server_id, channel_id)
+        } else if (e.type === 'server.deleted') {
+          const { server_id } = e.payload as { server_id: number }
+          setServers((prev) => prev.filter((s) => s.id !== server_id))
+          channelCacheRef.current.delete(server_id)
+          // 남이 지운 모임을 내가 보고 있었다면 그대로 두면 403이 뜨는 화면에 남는다
+          if (server_id === sid) navigate('/servers', { replace: true })
         } else if (e.type === 'server.member_removed') {
           const { server_id, user_id } = e.payload as { server_id: number; user_id: number }
           if (user_id === userId) {
@@ -240,6 +255,48 @@ export function ChatPage() {
     })
   }
 
+  // 채널 하나를 목록·캐시에서 걷어낸다. 내가 지웠을 때와 남이 지웠을 때(WS) 모두
+  // 같은 정리가 필요해 한 곳에 둔다. 지워진 것이 지금 보고 있던 채널이면 위쪽
+  // 정정 effect가 알아서 남은 첫 채널로 옮겨준다 — 여기서 따로 이동시키지 않는다.
+  function dropChannelLocally(serverIdOfChannel: number, channelId: number) {
+    const cached = channelCacheRef.current.get(serverIdOfChannel)
+    if (cached) {
+      channelCacheRef.current.set(
+        serverIdOfChannel,
+        cached.filter((c) => c.id !== channelId),
+      )
+    }
+    setChannelData((prev) => {
+      if (!prev || prev.sid !== serverIdOfChannel) return prev
+      return { sid: prev.sid, list: prev.list.filter((c) => c.id !== channelId) }
+    })
+  }
+
+  // 채널 삭제(방장). 내가 보고 있던 채널을 지운 경우 삭제 브로드캐스트가 그 채널로는
+  // 오지 않으므로(채널이 이미 없다) 응답을 받은 자리에서 직접 목록을 고친다.
+  async function onDeleteChannel(channelId: number) {
+    await deleteChannel(sid, channelId)
+    dropChannelLocally(sid, channelId)
+  }
+
+  // 모임 삭제(방장) / 나가기(멤버) — 둘 다 이 화면에 더 머무를 이유가 없어진다.
+  // 남겨두면 다음 요청부터 403·404가 뜨는 화면을 보게 되므로 목록으로 돌려보낸다.
+  function leaveThisServerScreen() {
+    channelCacheRef.current.delete(sid)
+    setServers((prev) => prev.filter((s) => s.id !== sid))
+    navigate('/servers', { replace: true })
+  }
+
+  async function onDeleteServer() {
+    await deleteServer(sid)
+    leaveThisServerScreen()
+  }
+
+  async function onLeaveServer() {
+    await leaveServer(sid)
+    leaveThisServerScreen()
+  }
+
   const activeServer = servers.find((s) => s.id === sid)
   const activeChannel = channels.find((c) => c.id === cid)
 
@@ -269,6 +326,9 @@ export function ChatPage() {
           onAddChannel={onAddChannel}
           onRenameServer={onRenameServer}
           onRenameChannel={onRenameChannel}
+          onDeleteChannel={onDeleteChannel}
+          onDeleteServer={onDeleteServer}
+          onLeaveServer={onLeaveServer}
           onProfile={() => {
             setShowProfile(true)
             closeNav()

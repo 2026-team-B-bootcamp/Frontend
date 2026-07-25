@@ -1,14 +1,15 @@
 /**
- * 채팅 화면 좌측 사이드바 — 현재 서버 이름/초대코드, 채널 목록, 채널 추가,
- * 사이드바 색 고르기, 내 프로필/로그아웃 버튼.
- * 채널 선택은 라우팅(Link)으로 처리하고, 채널 추가·이름 변경은 prop으로 받은 콜백을 통해
+ * 채팅 화면 좌측 사이드바 — 현재 서버 이름/초대코드, 채널 목록, 채널 추가·삭제,
+ * 모임 삭제·나가기, 사이드바 색 고르기, 내 프로필/로그아웃 버튼.
+ * 채널 선택은 라우팅(Link)으로 처리하고, 나머지 동작은 prop으로 받은 콜백을 통해
  * ChatPage가 servers/api.ts로 백엔드에 요청하도록 위임한다.
  */
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { CopyIcon, LogoutIcon, PencilIcon } from '../../shared/ui/icons'
+import { CopyIcon, LogoutIcon, MoreIcon, PencilIcon, TrashIcon } from '../../shared/ui/icons'
 import { Avatar } from '../../shared/ui/Avatar'
+import { ConfirmDialog } from '../../shared/ui/ConfirmDialog'
 import { useAuth } from '../auth/authContext'
 import { SidebarThemePicker } from './SidebarThemePicker'
 import type { Channel, Server } from './api'
@@ -76,6 +77,9 @@ export function ChannelSidebar({
   onAddChannel,
   onRenameServer,
   onRenameChannel,
+  onDeleteChannel,
+  onDeleteServer,
+  onLeaveServer,
   onProfile,
   onLogout,
   onNavigate,
@@ -87,6 +91,9 @@ export function ChannelSidebar({
   onAddChannel: (name: string) => Promise<void>
   onRenameServer: (name: string) => Promise<void>
   onRenameChannel: (channelId: number, name: string) => Promise<void>
+  onDeleteChannel: (channelId: number) => Promise<void>
+  onDeleteServer: () => Promise<void>
+  onLeaveServer: () => Promise<void>
   onProfile: () => void
   onLogout: () => void
   // 채널을 골랐을 때 부모가 할 후처리 — 모바일에선 드로어를 닫는다
@@ -102,6 +109,62 @@ export function ChannelSidebar({
   const [editing, setEditing] = useState<{ kind: 'server' } | { kind: 'channel'; id: number } | null>(
     null,
   )
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  // 확인 모달로 잡아 둔 동작. 한 번에 하나만 열리므로 상태 하나로 둔다.
+  const [pending, setPending] = useState<
+    { kind: 'channel'; channel: Channel } | { kind: 'deleteServer' } | { kind: 'leaveServer' } | null
+  >(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // 방장만 지울 수 있다 — 버튼을 감추는 것은 편의고, 진짜 차단은 백엔드가 한다.
+  const amOwner = server != null && server.owner_user_id === userId
+  // 마지막 채널은 백엔드가 400으로 막는다. 눌러봐야 거절당할 버튼은 아예 감춘다.
+  const canDeleteChannel = amOwner && channels.length > 1
+
+  // 메뉴 바깥을 누르거나 Esc를 누르면 닫는다 — 열어둔 채로 다른 곳을 만지다가
+  // 파괴적 항목을 실수로 누르는 일이 없게 한다.
+  useEffect(() => {
+    if (!menuOpen) return
+    function onPointer(e: MouseEvent) {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false)
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
+
+  function openPending(next: NonNullable<typeof pending>) {
+    setMenuOpen(false)
+    setError(null)
+    setPending(next)
+  }
+
+  // 확인 모달의 "삭제/나가기"를 눌렀을 때. 성공하면 부모가 화면을 옮기거나 목록을
+  // 갱신하므로 여기서는 모달만 닫는다. 실패하면 모달을 열어둔 채 이유를 보여준다 —
+  // 조용히 닫히면 눌렀는데 아무 일도 안 일어난 것처럼 보인다.
+  async function runPending() {
+    if (!pending) return
+    setBusy(true)
+    setError(null)
+    try {
+      if (pending.kind === 'channel') await onDeleteChannel(pending.channel.id)
+      else if (pending.kind === 'deleteServer') await onDeleteServer()
+      else await onLeaveServer()
+      setPending(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '처리하지 못했습니다')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function onCopyInvite() {
     if (!server) return
@@ -157,6 +220,59 @@ export function ChannelSidebar({
                 <PencilIcon size={13} />
               </button>
             )}
+            {/* 모임 삭제·나가기는 메뉴 안에 접어둔다. 이름 바꾸기 연필 옆에
+                나란히 두면 한 칸 어긋난 클릭이 곧 모임 삭제가 된다. */}
+            {server && (
+              <div className="sidebar-menu-wrap" ref={menuRef}>
+                <button
+                  type="button"
+                  className={`sidebar-rename-btn${menuOpen ? ' open' : ''}`}
+                  onClick={() => setMenuOpen((v) => !v)}
+                  title="모임 메뉴"
+                  aria-label="모임 메뉴"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                >
+                  <MoreIcon size={14} />
+                </button>
+                <AnimatePresence>
+                  {menuOpen && (
+                    <motion.div
+                      className="sidebar-menu"
+                      role="menu"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.14, ease: 'easeOut' }}
+                    >
+                      {/* 방장은 나갈 수 없다(백엔드가 400). 남길 수 있는 선택지가
+                          삭제뿐이므로 역할에 따라 항목 자체를 바꾼다. */}
+                      {amOwner ? (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="sidebar-menu-item danger"
+                          onClick={() => openPending({ kind: 'deleteServer' })}
+                        >
+                          <TrashIcon size={14} />
+                          모임 삭제
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="sidebar-menu-item danger"
+                          onClick={() => openPending({ kind: 'leaveServer' })}
+                        >
+                          <LogoutIcon size={15} />
+                          모임 나가기
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
         )}
         {server && (
@@ -200,7 +316,10 @@ export function ChannelSidebar({
               />
             </div>
           ) : (
-            <div key={c.id} className="sidebar-channel-row">
+            <div
+              key={c.id}
+              className={`sidebar-channel-row${canDeleteChannel ? ' has-delete' : ''}`}
+            >
               <Link
                 to={`/servers/${c.server_id}/channels/${c.id}`}
                 className={`sidebar-channel${c.id === activeChannelId ? ' active' : ''}`}
@@ -209,15 +328,28 @@ export function ChannelSidebar({
                 <span className="hash">#</span>
                 <span className="name">{c.name}</span>
               </Link>
-              <button
-                type="button"
-                className="sidebar-rename-btn channel"
-                onClick={() => setEditing({ kind: 'channel', id: c.id })}
-                title="채널 이름 바꾸기"
-                aria-label={`${c.name} 채널 이름 바꾸기`}
-              >
-                <PencilIcon size={13} />
-              </button>
+              <div className="sidebar-channel-actions">
+                <button
+                  type="button"
+                  className="sidebar-rename-btn"
+                  onClick={() => setEditing({ kind: 'channel', id: c.id })}
+                  title="채널 이름 바꾸기"
+                  aria-label={`${c.name} 채널 이름 바꾸기`}
+                >
+                  <PencilIcon size={13} />
+                </button>
+                {canDeleteChannel && (
+                  <button
+                    type="button"
+                    className="sidebar-rename-btn danger"
+                    onClick={() => openPending({ kind: 'channel', channel: c })}
+                    title="채널 삭제"
+                    aria-label={`${c.name} 채널 삭제`}
+                  >
+                    <TrashIcon size={13} />
+                  </button>
+                )}
+              </div>
             </div>
           ),
         )}
@@ -260,6 +392,41 @@ export function ChannelSidebar({
           <LogoutIcon size={17} />
         </button>
       </div>
+
+      {/* 되돌릴 수 없는 세 가지를 한 번 더 묻는다. 모임 삭제만 이름을 직접 입력받는데,
+          피해 범위가 채널 하나가 아니라 모임 전체(모든 채널·대화·멤버)이기 때문이다. */}
+      <ConfirmDialog
+        open={pending?.kind === 'channel'}
+        title="이 채널을 삭제할까요?"
+        description="채널 안의 대화가 모두 사라지고 되돌릴 수 없어요."
+        target={pending?.kind === 'channel' ? `# ${pending.channel.name}` : undefined}
+        busy={busy}
+        error={error}
+        onConfirm={runPending}
+        onCancel={() => setPending(null)}
+      />
+      <ConfirmDialog
+        open={pending?.kind === 'deleteServer'}
+        title="이 모임을 삭제할까요?"
+        description="모든 채널과 대화, 멤버가 함께 사라지고 되돌릴 수 없어요."
+        target={server?.name}
+        confirmText={server?.name}
+        busy={busy}
+        error={error}
+        onConfirm={runPending}
+        onCancel={() => setPending(null)}
+      />
+      <ConfirmDialog
+        open={pending?.kind === 'leaveServer'}
+        title="이 모임에서 나갈까요?"
+        description="남긴 메시지는 그대로 남고, 초대코드로 다시 들어올 수 있어요."
+        target={server?.name}
+        confirmLabel="나가기"
+        busy={busy}
+        error={error}
+        onConfirm={runPending}
+        onCancel={() => setPending(null)}
+      />
     </aside>
   )
 }

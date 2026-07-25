@@ -254,6 +254,18 @@ export function TrashIcon({ size = 16 }: { size?: number }) {
   )
 }
 
+// 사이드바 머리의 모임 메뉴(⋯)용 — 파괴적 동작(모임 삭제·나가기)을 접어두는 자리.
+// 이름 바꾸기 연필 옆에 휴지통을 그대로 두면 한 칸 차이로 모임이 통째로 날아간다.
+export function MoreIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="12" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="19" cy="12" r="1.8" />
+    </svg>
+  )
+}
+
 // 사이드바 하단 로그아웃 버튼용 — 문(door)에서 화살표가 나가는 형태
 export function LogoutIcon({ size = 18 }: { size?: number }) {
   return (
