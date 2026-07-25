@@ -10,6 +10,8 @@ import { BLACK, getOmok, joinOmok, placeStone, resetOmok, type OmokState } from 
 import { ApiError } from '../../../shared/api/client'
 import { fireWinConfetti } from '../../../shared/lib/confetti'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameEnded } from '../useGameEnded'
 import { OmokBoard } from './OmokBoard'
 
 export function OmokPanel({
@@ -38,6 +40,9 @@ export function OmokPanel({
   useEffect(() => {
     refetch()
   }, [refetch])
+
+  // 방장이 판을 접으면 판 자체가 사라진다 — "게임 없음" 화면으로 되돌린다
+  useGameEnded('omok', subscribe, () => setState(null))
 
   // omok.state 이벤트는 서버가 매 착수마다 최신 판 상태를 그대로 보내주므로 바로 반영하고,
   // 재연결(ws.open) 시에는 최신 상태를 다시 조회한다
@@ -187,6 +192,8 @@ export function OmokPanel({
           </button>
         </>
       )}
+
+      <HostEndButton channelId={channelId} kind="omok" hostUserId={state.host_user_id} />
     </div>
   )
 }

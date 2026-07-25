@@ -9,6 +9,11 @@ import './styles/index.css'
 import App from './App.tsx'
 import { AuthProvider } from './features/auth/AuthContext.tsx'
 import { setToken } from './shared/api/client'
+import { initSidebarTheme } from './shared/lib/sidebarTheme'
+
+// 저장된 사이드바 테마를 첫 페인트 전에 붙인다 — React 안(useEffect)에서 하면
+// 기본 테마로 한 번 그려졌다가 바뀌어 눈에 띄게 깜빡인다.
+initSidebarTheme()
 
 // 슬랙 봇이 발급한 개인 입장 링크(...?t=<JWT>&open=bingo)로 들어온 경우.
 //

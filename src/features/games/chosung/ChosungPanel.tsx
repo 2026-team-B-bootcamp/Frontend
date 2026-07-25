@@ -20,6 +20,8 @@ import {
 import { ApiError } from '../../../shared/api/client'
 import { fireWinConfetti } from '../../../shared/lib/confetti'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameEnded } from '../useGameEnded'
 
 const FUSE_TOTAL = 120
 
@@ -80,6 +82,9 @@ export function ChosungPanel({
   useEffect(() => {
     refetch()
   }, [refetch])
+
+  // 방장이 판을 접으면 판 자체가 사라진다 — "게임 없음" 화면으로 되돌린다
+  useGameEnded('chosung', subscribe, () => setState(null))
 
   // WS로 전체 상태가 그대로 내려오고, 재연결 시엔 다시 가져온다
   useEffect(
@@ -292,6 +297,8 @@ export function ChosungPanel({
           </button>
         </div>
       )}
+
+      <HostEndButton channelId={channelId} kind="chosung" hostUserId={state.host_user_id} />
     </div>
   )
 }

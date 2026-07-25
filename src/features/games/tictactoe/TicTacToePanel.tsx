@@ -17,6 +17,8 @@ import {
 import { ApiError } from '../../../shared/api/client'
 import { fireWinConfetti } from '../../../shared/lib/confetti'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameEnded } from '../useGameEnded'
 import { TicTacToeBoard } from './TicTacToeBoard'
 
 export function TicTacToePanel({
@@ -45,6 +47,9 @@ export function TicTacToePanel({
   useEffect(() => {
     refetch()
   }, [refetch])
+
+  // 방장이 판을 접으면 판 자체가 사라진다 — "게임 없음" 화면으로 되돌린다
+  useGameEnded('tictactoe', subscribe, () => setState(null))
 
   useEffect(
     () =>
@@ -177,6 +182,8 @@ export function TicTacToePanel({
           </button>
         </>
       )}
+
+      <HostEndButton channelId={channelId} kind="tictactoe" hostUserId={state.host_user_id} />
     </div>
   )
 }

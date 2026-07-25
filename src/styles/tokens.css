@@ -52,6 +52,122 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* ---------- 좌측 프레임(서버 레일 + 채널 사이드바) 테마 ----------
+
+   앱 전체가 아니라 왼쪽 프레임만 갈아끼운다 — 채팅 본문·게임·모달은 위 화이트
+   캔버스를 그대로 쓰고, 슬랙처럼 사이드바 색만 고른다. 아래 변수만 정의하면
+   테마가 하나 늘어나고, 색을 직접 쓴 규칙이 chat.css에 남지 않게 한다.
+
+   --rail-*   : 좁은 서버 아이콘 띠 (진한 면)
+   --side-*   : 채널 사이드바 (밝은 면)
+   ink/soft/faint 는 그 면 위 글자의 대비 3단계.
+
+   기본값은 아이보리다. html[data-sidebar-theme]가 아직 안 붙은 아주 짧은
+   순간(초기 스크립트 실행 전)에도 색이 비지 않도록 :root에 기본을 깔아둔다. */
+:root,
+:root[data-sidebar-theme='ivory'] {
+  --rail-solid: #e0d5bd;
+  --rail-ink: #4a4231;
+  --rail-ring: #fffdf7;
+  --rail-add-bg: #fffdf7;
+  --side-solid: #f7f2e6;
+  --side-ink: #2f2a1e;
+  --side-ink-soft: rgba(47, 42, 30, 0.74);
+  --side-ink-faint: rgba(47, 42, 30, 0.5);
+  --side-line: rgba(47, 42, 30, 0.14);
+  --side-hover: rgba(255, 255, 255, 0.75);
+  --side-active-bg: #ffffff;
+  --side-active-ink: #2f2a1e;
+  --side-field-bg: rgba(255, 255, 255, 0.8);
+  --side-chip-bg: rgba(255, 255, 255, 0.8);
+  --side-chip-border: rgba(47, 42, 30, 0.16);
+  --side-code-bg: rgba(255, 139, 106, 0.18);
+  --side-code-ink: #d1512e;
+}
+
+/* 기존 룩 — 슬랙식 스카이 프레임 */
+:root[data-sidebar-theme='sky'] {
+  --rail-solid: #5fa8dd;
+  --rail-ink: #ffffff;
+  --rail-ring: #ffffff;
+  --rail-add-bg: #ffffff;
+  --side-solid: #8fc9f0;
+  --side-ink: #191a23;
+  --side-ink-soft: rgba(25, 26, 35, 0.72);
+  --side-ink-faint: rgba(25, 26, 35, 0.55);
+  --side-line: rgba(25, 26, 35, 0.14);
+  --side-hover: rgba(255, 255, 255, 0.55);
+  --side-active-bg: #ffffff;
+  --side-active-ink: #191a23;
+  --side-field-bg: rgba(255, 255, 255, 0.75);
+  --side-chip-bg: rgba(255, 255, 255, 0.75);
+  --side-chip-border: rgba(25, 26, 35, 0.16);
+  --side-code-bg: rgba(255, 139, 106, 0.18);
+  --side-code-ink: #d1512e;
+}
+
+:root[data-sidebar-theme='lavender'] {
+  --rail-solid: #9b8dd6;
+  --rail-ink: #ffffff;
+  --rail-ring: #ffffff;
+  --rail-add-bg: #ffffff;
+  --side-solid: #d9d2f4;
+  --side-ink: #2b2545;
+  --side-ink-soft: rgba(43, 37, 69, 0.74);
+  --side-ink-faint: rgba(43, 37, 69, 0.52);
+  --side-line: rgba(43, 37, 69, 0.14);
+  --side-hover: rgba(255, 255, 255, 0.7);
+  --side-active-bg: #ffffff;
+  --side-active-ink: #2b2545;
+  --side-field-bg: rgba(255, 255, 255, 0.78);
+  --side-chip-bg: rgba(255, 255, 255, 0.78);
+  --side-chip-border: rgba(43, 37, 69, 0.16);
+  --side-code-bg: rgba(255, 139, 106, 0.18);
+  --side-code-ink: #d1512e;
+}
+
+:root[data-sidebar-theme='mint'] {
+  --rail-solid: #66b499;
+  --rail-ink: #ffffff;
+  --rail-ring: #ffffff;
+  --rail-add-bg: #ffffff;
+  --side-solid: #c9e9dc;
+  --side-ink: #1d3a31;
+  --side-ink-soft: rgba(29, 58, 49, 0.74);
+  --side-ink-faint: rgba(29, 58, 49, 0.52);
+  --side-line: rgba(29, 58, 49, 0.14);
+  --side-hover: rgba(255, 255, 255, 0.7);
+  --side-active-bg: #ffffff;
+  --side-active-ink: #1d3a31;
+  --side-field-bg: rgba(255, 255, 255, 0.78);
+  --side-chip-bg: rgba(255, 255, 255, 0.78);
+  --side-chip-border: rgba(29, 58, 49, 0.16);
+  --side-code-bg: rgba(255, 139, 106, 0.18);
+  --side-code-ink: #d1512e;
+}
+
+/* 어두운 면 위에서는 흰 반투명이 하이라이트 역할을 한다 — 밝은 테마들의
+   rgba(255,255,255,·)를 그대로 쓰되 잉크만 뒤집으면 그림이 맞는다. */
+:root[data-sidebar-theme='dark'] {
+  --rail-solid: #1b1c23;
+  --rail-ink: #ffffff;
+  --rail-ring: #6f7284;
+  --rail-add-bg: #3a3d4a;
+  --side-solid: #2a2c36;
+  --side-ink: #f2f2f6;
+  --side-ink-soft: rgba(242, 242, 246, 0.78);
+  --side-ink-faint: rgba(242, 242, 246, 0.52);
+  --side-line: rgba(255, 255, 255, 0.12);
+  --side-hover: rgba(255, 255, 255, 0.08);
+  --side-active-bg: rgba(255, 255, 255, 0.16);
+  --side-active-ink: #ffffff;
+  --side-field-bg: rgba(255, 255, 255, 0.1);
+  --side-chip-bg: rgba(255, 255, 255, 0.1);
+  --side-chip-border: rgba(255, 255, 255, 0.18);
+  --side-code-bg: rgba(255, 139, 106, 0.2);
+  --side-code-ink: #ffb59c;
+}
+
 * {
   box-sizing: border-box;
   /* 스크롤은 유지하되 스크롤바는 숨긴다 — 컬러 블록 미감 유지 */

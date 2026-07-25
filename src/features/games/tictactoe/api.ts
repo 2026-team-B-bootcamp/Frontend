@@ -23,6 +23,8 @@ export interface TicTacToeState {
   winner_user_id: number | null
   winning_line: number[][] | null
   last_move: number[] | null
+  // 이 판을 연 사람(방장). 이 사람만 강제 종료할 수 있다.
+  host_user_id: number | null
 }
 
 export function joinTicTacToe(channelId: number) {

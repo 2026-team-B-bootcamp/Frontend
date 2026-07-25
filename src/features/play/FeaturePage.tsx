@@ -98,7 +98,13 @@ export function FeaturePage() {
 
         {feature === 'members' && (
           <div className="feature-page-panel">
-            <MembersPanel serverId={sid} online={online} />
+            {/* 이 페이지에는 모달을 띄울 자리가 따로 없다 — 관심사 통계는 이미
+                전용 화면(play/tags)이 있으니 그리로 보낸다. */}
+            <MembersPanel
+              serverId={sid}
+              online={online}
+              onOpenTagStats={() => navigate(`${chatHref}/play/tags`)}
+            />
           </div>
         )}
 
