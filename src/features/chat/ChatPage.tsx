@@ -13,6 +13,8 @@ import {
   getMembers,
   listChannels,
   listServers,
+  renameChannel,
+  renameServer,
   type Channel,
   type Server,
 } from '../servers/api'
@@ -75,8 +77,12 @@ export function ChatPage() {
   const [showProfile, setShowProfile] = useState(false)
   const [showAddServer, setShowAddServer] = useState(false)
   const [membersRefresh, setMembersRefresh] = useState(0)
-  // 관심사 태그가 비어 있는 사람에게 서버 입장 시 한 번 띄우는 온보딩 모달
-  const [showTagSetup, setShowTagSetup] = useState(false)
+  // 관심사 태그 모달. null이면 닫힘.
+  // 'onboarding' = 태그가 빈 사람에게 입장 시 자동으로 뜬 것 → 닫으면 "다시 묻지 말라"로 기록.
+  // 'browse'     = 멤버 패널에서 직접 연 것 → 닫아도 아무것도 기록하지 않는다.
+  // 예전엔 boolean 하나였는데, 직접 연 모달을 닫는 것까지 "미뤘음"으로 남아
+  // 정작 온보딩이 필요한 순간에 안 뜨게 될 여지가 있었다.
+  const [tagSetup, setTagSetup] = useState<'onboarding' | 'browse' | null>(null)
 
   // 채널의 실시간 웹소켓 연결. subscribe로 이벤트 구독, online/typers는 접속중/입력중 상태
   const { subscribe, online, typers, sendTyping } = useChannelSocket(cid, token)
@@ -116,7 +122,7 @@ export function ChatPage() {
       .then((ms) => {
         const mine = ms.find((m) => m.user_id === userId)
         const hasTags = (mine?.tags ?? []).some((t) => t && t.trim().length > 0)
-        if (active && mine && !hasTags) setShowTagSetup(true)
+        if (active && mine && !hasTags) setTagSetup('onboarding')
       })
       .catch(() => {
         // 목록을 못 받으면 조용히 넘어간다 — 프로필 모달로 언제든 설정할 수 있다
@@ -170,6 +176,38 @@ export function ChatPage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [navOpen, panelIsOverlay, showMembers])
 
+  // 남이 이름을 바꾸거나 나를 내보냈을 때 — 새로고침 없이 화면을 맞춘다.
+  // 이름 변경은 내가 바꾼 경우에도 같은 이벤트가 돌아오지만, 이미 같은 값이라
+  // 덮어써도 달라지는 게 없다(따로 걸러내지 않는다).
+  useEffect(
+    () =>
+      subscribe((e) => {
+        if (e.type === 'server.renamed') {
+          const { server_id, name } = e.payload as { server_id: number; name: string }
+          setServers((prev) => prev.map((s) => (s.id === server_id ? { ...s, name } : s)))
+        } else if (e.type === 'channel.renamed') {
+          const { channel_id, name } = e.payload as { channel_id: number; name: string }
+          setChannelData((prev) => {
+            if (!prev) return prev
+            const list = prev.list.map((c) => (c.id === channel_id ? { ...c, name } : c))
+            channelCacheRef.current.set(prev.sid, list)
+            return { sid: prev.sid, list }
+          })
+        } else if (e.type === 'server.member_removed') {
+          const { server_id, user_id } = e.payload as { server_id: number; user_id: number }
+          if (user_id === userId) {
+            // 내가 나가게 됐다. 그대로 두면 다음 요청마다 403이 뜨는 화면에
+            // 남아 있게 되므로 목록으로 돌려보낸다.
+            navigate('/servers', { replace: true })
+          } else if (server_id === sid) {
+            // 남이 나갔다 — 멤버 패널을 다시 그린다
+            setMembersRefresh((k) => k + 1)
+          }
+        }
+      }),
+    [subscribe, userId, sid, navigate],
+  )
+
   function onLogout() {
     logout()
     navigate('/login')
@@ -183,6 +221,23 @@ export function ChatPage() {
     setChannelData({ sid, list: next })
     navigate(`/servers/${sid}/channels/${ch.id}`)
     closeNav()
+  }
+
+  // 서버 이름 변경 — 레일·사이드바가 모두 servers 목록을 보고 그리므로 그 한 곳만 고친다
+  async function onRenameServer(name: string) {
+    const updated = await renameServer(sid, name)
+    setServers((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+  }
+
+  // 채널 이름 변경 — 목록과 캐시를 함께 갱신해야 서버를 오갔다 와도 옛 이름이 안 뜬다
+  async function onRenameChannel(channelId: number, name: string) {
+    const updated = await renameChannel(sid, channelId, name)
+    setChannelData((prev) => {
+      if (!prev || prev.sid !== sid) return prev
+      const list = prev.list.map((c) => (c.id === updated.id ? updated : c))
+      channelCacheRef.current.set(sid, list)
+      return { sid, list }
+    })
   }
 
   const activeServer = servers.find((s) => s.id === sid)
@@ -212,6 +267,8 @@ export function ChatPage() {
           activeChannelId={cid}
           displayName={displayName}
           onAddChannel={onAddChannel}
+          onRenameServer={onRenameServer}
+          onRenameChannel={onRenameChannel}
           onProfile={() => {
             setShowProfile(true)
             closeNav()
@@ -377,6 +434,7 @@ export function ChatPage() {
                 key={`${sid}-${membersRefresh}`}
                 serverId={sid}
                 online={online}
+                onOpenTagStats={() => setTagSetup('browse')}
               />
             </div>
           </motion.aside>
@@ -411,21 +469,26 @@ export function ChatPage() {
         )}
       </AnimatePresence>
 
-      {/* 태그가 비어 있는 사람에게만 자동으로 뜨는 온보딩 모달 */}
+      {/* 관심사 태그 모달 — 태그가 빈 사람에게 자동으로(onboarding),
+          멤버 패널의 버튼으로는 언제든(browse) 열린다 */}
       <AnimatePresence>
-        {showTagSetup && Number.isFinite(sid) && (
+        {tagSetup !== null && Number.isFinite(sid) && (
           <TagSetupModal
             serverId={sid}
             serverName={activeServer?.name}
+            mode={tagSetup}
             onDismiss={() => {
-              setShowTagSetup(false)
-              // 미뤘다는 사실을 남겨 이 서버에선 다시 묻지 않는다.
-              // 저장하고 닫은 경우엔 여기 오지 않는다 — 태그가 생겼으니 어차피 다시 뜨지 않고,
-              // "미뤘음"으로 잘못 기록하면 그 기록이 남아 나중에 오해를 부른다.
-              if (userId != null) localStorage.setItem(tagSetupSkipKey(userId, sid), '1')
+              // 미뤘다는 사실은 자동으로 뜬 경우에만 남긴다 — 직접 열어본 모달을
+              // 닫은 것까지 "미뤘음"으로 기록하면, 정작 온보딩이 필요한 순간에
+              // 그 기록 때문에 안 뜨게 된다.
+              // 저장하고 닫은 경우엔 여기 오지 않는다(onSaved가 받는다).
+              if (tagSetup === 'onboarding' && userId != null) {
+                localStorage.setItem(tagSetupSkipKey(userId, sid), '1')
+              }
+              setTagSetup(null)
             }}
             onSaved={() => {
-              setShowTagSetup(false)
+              setTagSetup(null)
               setMembersRefresh((k) => k + 1)
               // 태그를 막 등록했으니 이제 등장 소개를 만들 수 있다.
               // 백엔드는 태그가 없으면 카드를 만들지 않으므로(맹탕 카드가 "채널당 1회"를

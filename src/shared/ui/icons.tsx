@@ -202,6 +202,43 @@ export function GifIcon({ size = 18 }: { size?: number }) {
   )
 }
 
+// 이름 바꾸기(서버·채널) 버튼용 연필 아이콘
+export function PencilIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="m14.5 7.5 2 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+// 멤버 내보내기(강퇴) 버튼용 — 사람 옆에 ×
+export function UserMinusIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="9.5" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M3.5 19.5c0-3 2.7-4.8 6-4.8 1 0 2 .17 2.8.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="m16 15.5 4.5 4.5m0-4.5L16 20"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 // 메시지 삭제 등 "지우기" 동작에 쓰는 휴지통 아이콘
 export function TrashIcon({ size = 16 }: { size?: number }) {
   return (
