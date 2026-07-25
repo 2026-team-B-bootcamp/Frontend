@@ -143,6 +143,18 @@
   margin-top: 16px;
 }
 
+/* 모임 삭제처럼 피해 범위가 큰 동작에서 이름을 그대로 받아 적게 하는 칸.
+   손이 먼저 움직여 확인 버튼을 눌러버리는 것을 막는 마지막 턱이다. */
+.confirm-type {
+  display: block;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.confirm-type .input {
+  margin-top: 7px;
+}
+
 .btn.small {
   padding: 6px 12px;
   font-size: 13px;

@@ -79,3 +79,21 @@ export function getMembers(serverId: number) {
 export function kickMember(serverId: number, userId: number) {
   return apiFetch<void>(`/servers/${serverId}/members/${userId}`, { method: 'DELETE' })
 }
+
+// 채널 삭제 — 방장만. 채널 안의 메시지도 함께 사라진다.
+// 마지막 한 개는 백엔드가 400으로 막는다(채널 0개인 모임을 만들지 않기 위해).
+export function deleteChannel(serverId: number, channelId: number) {
+  return apiFetch<void>(`/servers/${serverId}/channels/${channelId}`, { method: 'DELETE' })
+}
+
+// 모임 삭제 — 방장만. 채널·메시지·멤버십·태그까지 전부 사라진다.
+export function deleteServer(serverId: number) {
+  return apiFetch<void>(`/servers/${serverId}`, { method: 'DELETE' })
+}
+
+// 모임 나가기 — 멤버 누구나. 단 방장은 나갈 수 없다(400) — 삭제해야 한다.
+// 경로가 /members/me인 이유: 내 user id를 프런트가 실어 보내면 남의 id를 넣어
+// 내보내기와 같은 일을 하는 우회로가 열린다.
+export function leaveServer(serverId: number) {
+  return apiFetch<void>(`/servers/${serverId}/members/me`, { method: 'DELETE' })
+}

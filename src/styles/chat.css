@@ -264,7 +264,10 @@
 
 .sidebar-name-row:hover .sidebar-rename-btn,
 .sidebar-channel-row:hover .sidebar-rename-btn,
-.sidebar-rename-btn:focus-visible {
+.sidebar-rename-btn:focus-visible,
+/* 메뉴가 열려 있는 동안은 버튼이 사라지면 안 된다 — 마우스가 메뉴 항목으로
+   내려가는 순간 행 hover가 풀려 여는 버튼만 증발하면 어디를 눌렀는지 잃는다 */
+.sidebar-rename-btn.open {
   opacity: 1;
 }
 
@@ -273,8 +276,15 @@
   color: var(--side-ink);
 }
 
-/* 채널 행: 링크가 남는 폭을 다 먹고, 연필은 그 위에 겹쳐 올린다.
-   연필이 자리를 차지하면 마우스를 올릴 때마다 채널 이름이 밀려 흔들린다. */
+/* 지우는 버튼은 hover에서 붉게 물든다 — 누르기 직전에 "이건 다른 종류"임을 알린다.
+   평소에도 붉으면 채널 목록이 경고문처럼 보인다. */
+.sidebar-rename-btn.danger:hover {
+  background: var(--side-hover);
+  color: var(--danger);
+}
+
+/* 채널 행: 링크가 남는 폭을 다 먹고, 버튼들은 그 위에 겹쳐 올린다.
+   버튼이 자리를 차지하면 마우스를 올릴 때마다 채널 이름이 밀려 흔들린다. */
 .sidebar-channel-row {
   position: relative;
   display: flex;
@@ -284,13 +294,62 @@
 .sidebar-channel-row .sidebar-channel {
   flex: 1;
   min-width: 0;
-  /* 겹쳐 놓은 연필이 이름을 가리지 않도록 오른쪽만 비워둔다 */
+  /* 겹쳐 놓은 버튼이 이름을 가리지 않도록 오른쪽만 비워둔다 */
   padding-right: 32px;
 }
 
-.sidebar-rename-btn.channel {
+/* 방장에게는 휴지통이 하나 더 붙는다 — 그만큼만 더 비운다 */
+.sidebar-channel-row.has-delete .sidebar-channel {
+  padding-right: 56px;
+}
+
+.sidebar-channel-actions {
   position: absolute;
   right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* 모임 메뉴(⋯) — 버튼 바로 아래에 떨어지는 작은 판 */
+.sidebar-menu-wrap {
+  position: relative;
+  display: flex;
+}
+
+.sidebar-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 152px;
+  padding: 5px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-hover);
+}
+
+.sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  font-size: 13.5px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sidebar-menu-item.danger {
+  color: var(--danger);
+}
+
+.sidebar-menu-item:hover {
+  background: var(--surface-2);
 }
 
 /* 편집 중인 줄은 링크 대신 입력칸이 들어온다 — 알약 모양·높이를 그대로 유지해
