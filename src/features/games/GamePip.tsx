@@ -8,12 +8,7 @@
  */
 import { useEffect, useRef, useState, type ComponentType, type PointerEvent, type RefObject } from 'react'
 import { motion, useDragControls } from 'motion/react'
-import { BingoPanel } from './bingo/BingoPanel'
-import { WordChainPanel } from './wordchain/WordChainPanel'
-import { OmokPanel } from './omok/OmokPanel'
-import { TicTacToePanel } from './tictactoe/TicTacToePanel'
-import { BalancePanel } from './balance/BalancePanel'
-import { ChosungPanel } from './chosung/ChosungPanel'
+import { PANELS } from './panels'
 import { ChosungPreview } from './chosung/preview'
 import {
   BalancePreview,
@@ -67,6 +62,7 @@ export function GamePip({
   statuses: GamesStatus
 }) {
   const [gameKind, setGameKind] = useState<GameKind>('bingo')
+  const Panel = PANELS[gameKind]
   // 모바일에선 화면 폭을 꽉 채우는 시트로 뜬다 — 드래그·리사이즈·인라인 크기를 모두 CSS에 맡긴다
   const isMobile = useIsMobile()
   // 폭은 처음부터 컴팩트하게 고정, 높이는 null이면 내용에 맞춘다(작은 게임은 작게).
@@ -177,12 +173,7 @@ export function GamePip({
           })}
         </div>
 
-        {gameKind === 'bingo' && <BingoPanel channelId={channelId} subscribe={subscribe} />}
-        {gameKind === 'wordchain' && <WordChainPanel channelId={channelId} subscribe={subscribe} />}
-        {gameKind === 'omok' && <OmokPanel channelId={channelId} subscribe={subscribe} />}
-        {gameKind === 'tictactoe' && <TicTacToePanel channelId={channelId} subscribe={subscribe} />}
-        {gameKind === 'balance' && <BalancePanel channelId={channelId} subscribe={subscribe} />}
-        {gameKind === 'chosung' && <ChosungPanel channelId={channelId} subscribe={subscribe} />}
+        <Panel channelId={channelId} subscribe={subscribe} />
       </div>
     </motion.div>
   )

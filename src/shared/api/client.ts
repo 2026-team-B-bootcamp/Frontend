@@ -78,6 +78,17 @@ export async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<
   return (await res.json()) as T
 }
 
+// apiFetch와 동일하지만, 리소스가 아직 없어 서버가 404를 반환하는 경우 에러를 던지는
+// 대신 null로 바꿔준다. 게임 6종의 getXxx()가 "판이 아직 없음"을 이 패턴으로 다룬다.
+export async function apiFetchOrNull<T>(path: string): Promise<T | null> {
+  try {
+    return await apiFetch<T>(path)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null
+    throw err
+  }
+}
+
 // apiFetch와 동일하지만 JSON 대신 FormData(파일 업로드)를 body로 그대로 보낸다
 export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
   const headers: Record<string, string> = {}

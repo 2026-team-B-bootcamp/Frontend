@@ -12,12 +12,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/authContext'
 import { useChannelSocket } from '../../shared/realtime/useChannelSocket'
 import { isGameKind } from '../games/gameKinds'
-import { BingoPanel } from '../games/bingo/BingoPanel'
-import { WordChainPanel } from '../games/wordchain/WordChainPanel'
-import { OmokPanel } from '../games/omok/OmokPanel'
-import { TicTacToePanel } from '../games/tictactoe/TicTacToePanel'
-import { BalancePanel } from '../games/balance/BalancePanel'
-import { ChosungPanel } from '../games/chosung/ChosungPanel'
+import { PANELS } from '../games/panels'
 import { WatchTogether } from '../watch/WatchTogether'
 import { Whiteboard } from '../draw/Whiteboard'
 import { MembersPanel } from '../chat/MembersPanel'
@@ -64,16 +59,15 @@ export function FeaturePage() {
       </header>
 
       <main className="feature-page-body">
-        {isGameKind(feature) && (
-          <div className="feature-page-panel">
-            {feature === 'bingo' && <BingoPanel channelId={cid} subscribe={subscribe} />}
-            {feature === 'wordchain' && <WordChainPanel channelId={cid} subscribe={subscribe} />}
-            {feature === 'omok' && <OmokPanel channelId={cid} subscribe={subscribe} />}
-            {feature === 'tictactoe' && <TicTacToePanel channelId={cid} subscribe={subscribe} />}
-            {feature === 'balance' && <BalancePanel channelId={cid} subscribe={subscribe} />}
-            {feature === 'chosung' && <ChosungPanel channelId={cid} subscribe={subscribe} />}
-          </div>
-        )}
+        {isGameKind(feature) &&
+          (() => {
+            const Panel = PANELS[feature]
+            return (
+              <div className="feature-page-panel">
+                <Panel channelId={cid} subscribe={subscribe} />
+              </div>
+            )
+          })()}
 
         {/* 같이보기·그림판은 원래 떠다니는 창이라 embedded로 드래그·리사이즈를 끈다.
             onClose는 창을 닫는 대신 채팅방으로 돌아가는 뜻이 된다. */}

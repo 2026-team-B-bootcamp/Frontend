@@ -4,45 +4,21 @@
  * 폭탄을 든 사람 한 명이 패배한다. 앞 단어의 끝글자로 잇는 단어를 대면 폭탄을 다음
  * 사람에게 넘길 뿐 시간은 리셋되지 않는다. 단어 규칙 검증은 서버가 판정한다.
  * 흐름: 이 패널 → wordchain/api.ts → 백엔드 끝말잇기 라우터.
+ *
+ * 도화선(Fuse)·카운트다운·생존자 컨페티·점수바·종료 배너는 초성퀴즈(ChosungPanel)와
+ * 거의 100% 같아서 features/games/{Fuse,useFuseCountdown,BombScorebar}로 뺐다.
+ * 이 패널에 남은 건 words 칩 목록(wc-chain)처럼 끝말잇기만의 화면뿐이다.
  */
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
-import {
-  getWordChain,
-  joinWordChain,
-  startWordChain,
-  submitWord,
-  type WordChainState,
-} from './api'
-import { ApiError } from '../../../shared/api/client'
-import { fireWinConfetti } from '../../../shared/lib/confetti'
+import { getWordChain, joinWordChain, startWordChain, submitWord } from './api'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
 import { HostEndButton } from '../HostControls'
-import { useGameEnded } from '../useGameEnded'
-
-const FUSE_TOTAL = 120
-
-// 폭탄 도화선 — 남은 시간에 비례해 줄어드는 심지 막대 + 💣. 20초 이하면 danger. (초성퀴즈와 동일 비주얼)
-function Fuse({ seconds }: { seconds: number }) {
-  const ratio = Math.max(0, Math.min(1, seconds / FUSE_TOTAL))
-  const danger = seconds <= 20
-  const mm = Math.floor(seconds / 60)
-  const ss = String(seconds % 60).padStart(2, '0')
-  return (
-    <div className={`cho-fuse${danger ? ' danger' : ''}`}>
-      <span className="cho-bomb" aria-hidden>
-        💣
-      </span>
-      <div className="cho-fuse-track">
-        <div className="cho-fuse-fill" style={{ width: `${ratio * 100}%` }} />
-      </div>
-      <span className="cho-fuse-time">
-        {mm}:{ss}
-      </span>
-    </div>
-  )
-}
+import { useGameSession } from '../useGameSession'
+import { Fuse } from '../Fuse'
+import { useFuseCountdown, useBombSurvivorConfetti } from '../useFuseCountdown'
+import { BombScorebar, BombFinishedBanner } from '../BombScorebar'
 
 export function WordChainPanel({
   channelId,
@@ -52,92 +28,21 @@ export function WordChainPanel({
   subscribe: Subscribe
 }) {
   const { userId } = useAuth()
-  const [state, setState] = useState<WordChainState | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const { state, loading, error, busy, run, refetch } = useGameSession(
+    'wordchain',
+    channelId,
+    subscribe,
+    getWordChain,
+  )
   const [draft, setDraft] = useState('')
-  const [seconds, setSeconds] = useState<number | null>(null)
-  const prevStatusRef = useRef<string | null>(null)
   const chainEndRef = useRef<HTMLDivElement | null>(null)
 
-  // 서버 상태가 갱신될 때마다 로컬 카운트다운을 서버 기준으로 다시 맞춘다
-  const [syncedState, setSyncedState] = useState<WordChainState | null>(null)
-  if (state !== syncedState) {
-    setSyncedState(state)
-    setSeconds(state?.seconds_left ?? null)
-  }
-
-  const refetch = useCallback(() => {
-    getWordChain(channelId)
-      .then((s) => setState(s))
-      .catch(() => {
-        // 일시적 실패는 마지막 상태 유지
-      })
-      .finally(() => setLoading(false))
-  }, [channelId])
-
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-
-  // 방장이 판을 접으면 판 자체가 사라진다 — "게임 없음" 화면으로 되돌린다
-  useGameEnded('wordchain', subscribe, () => setState(null))
-
-  useEffect(
-    () =>
-      subscribe((e) => {
-        if (e.type === 'wordchain.state') {
-          setState(e.payload as unknown as WordChainState)
-        } else if (e.type === 'ws.open') {
-          refetch()
-        }
-      }),
-    [subscribe, refetch],
-  )
-
-  // 로컬 카운트다운: 매초 1씩 줄이다 0이 되면 refetch로 서버의 최신 판정을 받는다
-  // (폭탄이 터지는 패배 처리는 서버 담당, 여기선 표시용 도화선만 탄다)
-  useEffect(() => {
-    if (state?.status !== 'playing' || seconds === null) return
-    if (seconds <= 0) {
-      refetch()
-      return
-    }
-    const t = setTimeout(() => setSeconds((s) => (s !== null ? s - 1 : s)), 1000)
-    return () => clearTimeout(t)
-  }, [seconds, state?.status, refetch])
-
-  // playing → finished 순간, 내가 패자가 아니라면(살아남았으면) 컨페티
-  useEffect(() => {
-    if (
-      state?.status === 'finished' &&
-      prevStatusRef.current === 'playing' &&
-      state.loser_user_id !== userId &&
-      state.players.some((p) => p.user_id === userId)
-    ) {
-      fireWinConfetti()
-    }
-    prevStatusRef.current = state?.status ?? null
-  }, [state, userId])
+  const seconds = useFuseCountdown(state, refetch)
+  useBombSurvivorConfetti(state, userId)
 
   useEffect(() => {
     chainEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [state?.words.length])
-
-  async function run(fn: () => Promise<WordChainState>) {
-    setBusy(true)
-    setError(null)
-    try {
-      setState(await fn())
-      return true
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '요청에 실패했습니다')
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -175,20 +80,7 @@ export function WordChainPanel({
     <div className="wc-panel">
       {error && <div className="error">{error}</div>}
 
-      <div className="panel-scorebar">
-        {state.players.map((p) => (
-          <span
-            key={p.user_id}
-            className={`score${
-              state.status === 'finished' && p.user_id === state.loser_user_id ? ' dead' : ''
-            }${state.status === 'playing' && p.user_id === state.turn_user_id ? ' turn' : ''}`}
-          >
-            {state.status === 'playing' && p.user_id === state.turn_user_id && '💣 '}
-            {p.display_name}
-            {p.user_id === userId && ' (나)'}
-          </span>
-        ))}
-      </div>
+      <BombScorebar state={state} userId={userId} />
 
       {state.last_event && <div className="wc-event">{state.last_event}</div>}
 
@@ -274,19 +166,7 @@ export function WordChainPanel({
 
       {state.status === 'finished' && (
         <div className="panel-empty">
-          <motion.div
-            className={`banner ${state.loser_user_id === userId ? 'lose' : 'win'}`}
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.28, ease: 'easeOut' }}
-          >
-            {state.loser_user_id === userId
-              ? '💥 폭탄이 터졌어요… 벌칙 당첨!'
-              : `💣 ${
-                  state.players.find((p) => p.user_id === state.loser_user_id)?.display_name ??
-                  '누군가'
-                }님 손에서 폭탄이 터졌어요!`}
-          </motion.div>
+          <BombFinishedBanner state={state} userId={userId} />
           {state.words.length > 0 && (
             <p className="muted panel-note">
               이번 판 단어 {state.words.length}개 — 마지막 단어 "{lastWord?.word}"

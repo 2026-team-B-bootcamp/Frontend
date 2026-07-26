@@ -2,7 +2,7 @@
  * 밸런스게임(게시글형 토론 + 제한시간) 백엔드 호출 모음 — apiFetch로 balance 라우터와 통신한다.
  * BalancePanel이 이 함수들로 시작/투표/의견/조회/초기화를 한다.
  */
-import { apiFetch, ApiError } from '../../../shared/api/client'
+import { apiFetch, apiFetchOrNull } from '../../../shared/api/client'
 
 export type Side = 'a' | 'b'
 
@@ -52,11 +52,6 @@ export function resetBalance(channelId: number) {
   return apiFetch<BalanceState>(`/channels/${channelId}/balance/reset`, { method: 'POST' })
 }
 
-export async function getBalance(channelId: number): Promise<BalanceState | null> {
-  try {
-    return await apiFetch<BalanceState>(`/channels/${channelId}/balance`)
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 404) return null
-    throw err
-  }
+export function getBalance(channelId: number) {
+  return apiFetchOrNull<BalanceState>(`/channels/${channelId}/balance`)
 }

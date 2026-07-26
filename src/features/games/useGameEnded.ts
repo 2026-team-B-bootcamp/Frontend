@@ -17,7 +17,7 @@ export function useGameEnded(kind: GameKind, subscribe: Subscribe, onEnded: () =
     () =>
       subscribe((e) => {
         if (e.type !== 'game.ended') return
-        if ((e.payload as unknown as GameEndedPayload).kind === kind) onEnded()
+        if ((e.payload as GameEndedPayload).kind === kind) onEnded()
       }),
     // onEnded는 패널마다 인라인 함수로 넘어와 매 렌더 새 참조가 된다. 의존성에
     // 넣으면 렌더마다 구독을 끊었다 다시 걸어 이벤트를 흘릴 수 있어 제외한다.
