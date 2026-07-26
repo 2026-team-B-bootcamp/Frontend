@@ -83,7 +83,7 @@ export function WatchTogether({
       .then((s) => alive && setState(s))
       .catch(() => alive && setState(INACTIVE))
     const off = subscribe((e) => {
-      if (e.type === 'watch.state') setState(e.payload as unknown as WatchState)
+      if (e.type === 'watch.state') setState(e.payload as WatchState)
       else if (e.type === 'ws.open') getWatch(channelId).then(setState).catch(() => {})
     })
     return () => {

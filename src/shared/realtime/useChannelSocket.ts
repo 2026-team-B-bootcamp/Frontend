@@ -28,11 +28,14 @@ export function useChannelSocket(channelId: number, token: string | null) {
     if (!token || !Number.isFinite(channelId)) return
     const sock = connectChannelSocket(channelId, token, (e) => {
       if (e.type === 'presence.update') {
-        const users = (e.payload.users as { user_id: number }[] | undefined) ?? []
+        // payload가 unknown이라 프로퍼티에 바로 접근할 수 없다 — 먼저 모양을 캐스트한다
+        const payload = e.payload as { users?: { user_id: number }[] }
+        const users = payload.users ?? []
         setOnline(new Set(users.map((u) => u.user_id)))
       } else if (e.type === 'typing') {
-        const uid = e.payload.user_id as number
-        const name = e.payload.display_name as string
+        const payload = e.payload as { user_id: number; display_name: string }
+        const uid = payload.user_id
+        const name = payload.display_name
         setTypers((prev) => {
           const next = new Map(prev)
           next.set(uid, { name, until: Date.now() + 3000 })

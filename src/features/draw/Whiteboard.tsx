@@ -120,7 +120,7 @@ export function Whiteboard({
       .catch(() => {})
     const off = subscribe((e) => {
       if (e.type === 'draw.stroke') {
-        const s = e.payload as unknown as Stroke
+        const s = e.payload as Stroke
         strokesRef.current.push(s)
         const canvas = canvasRef.current
         const ctx = canvas?.getContext('2d')
