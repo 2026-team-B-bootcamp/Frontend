@@ -8,6 +8,8 @@ export interface Server {
   id: number
   name: string
   invite_code: string
+  // 이 모임을 만든 사람(방장). 멤버 내보내기 버튼을 누구에게 보일지의 기준.
+  owner_user_id: number | null
 }
 
 export interface Channel {
@@ -23,6 +25,8 @@ export interface Member {
   avatar_url: string | null
   tags: string[]
   common_with_me: string[]
+  // 이 멤버가 모임을 만든 사람인가 — 방장 자신은 내보낼 수 없다
+  is_owner: boolean
 }
 
 // 새 서버(모임) 생성
@@ -53,7 +57,43 @@ export function createChannel(serverId: number, name: string) {
   })
 }
 
+// 서버(모임) 이름 변경 — 멤버면 누구나 할 수 있다
+export function renameServer(serverId: number, name: string) {
+  return apiFetch<Server>(`/servers/${serverId}`, { method: 'PATCH', body: { name } })
+}
+
+// 채널 이름 변경
+export function renameChannel(serverId: number, channelId: number, name: string) {
+  return apiFetch<Channel>(`/servers/${serverId}/channels/${channelId}`, {
+    method: 'PATCH',
+    body: { name },
+  })
+}
+
 // 서버 멤버 목록 (각 멤버의 관심사 태그, 나와 겹치는 태그 포함)
 export function getMembers(serverId: number) {
   return apiFetch<Member[]>(`/servers/${serverId}/members`)
+}
+
+// 멤버 내보내기 — 모임을 만든 사람만 호출할 수 있다(아니면 403)
+export function kickMember(serverId: number, userId: number) {
+  return apiFetch<void>(`/servers/${serverId}/members/${userId}`, { method: 'DELETE' })
+}
+
+// 채널 삭제 — 방장만. 채널 안의 메시지도 함께 사라진다.
+// 마지막 한 개는 백엔드가 400으로 막는다(채널 0개인 모임을 만들지 않기 위해).
+export function deleteChannel(serverId: number, channelId: number) {
+  return apiFetch<void>(`/servers/${serverId}/channels/${channelId}`, { method: 'DELETE' })
+}
+
+// 모임 삭제 — 방장만. 채널·메시지·멤버십·태그까지 전부 사라진다.
+export function deleteServer(serverId: number) {
+  return apiFetch<void>(`/servers/${serverId}`, { method: 'DELETE' })
+}
+
+// 모임 나가기 — 멤버 누구나. 단 방장은 나갈 수 없다(400) — 삭제해야 한다.
+// 경로가 /members/me인 이유: 내 user id를 프런트가 실어 보내면 남의 id를 넣어
+// 내보내기와 같은 일을 하는 우회로가 열린다.
+export function leaveServer(serverId: number) {
+  return apiFetch<void>(`/servers/${serverId}/members/me`, { method: 'DELETE' })
 }

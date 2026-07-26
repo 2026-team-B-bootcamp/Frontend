@@ -2,6 +2,7 @@
 @import './tokens.css';
 @import './ui.css';
 @import './lobby.css';
+@import './sidebar.css';
 @import './chat.css';
 @import './panel.css';
 @import './games.css';
@@ -10,3 +11,4 @@
 @import './link-preview.css';
 @import './landing.css';
 @import './profile.css';
+@import './feature-page.css';

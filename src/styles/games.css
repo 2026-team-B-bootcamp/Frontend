@@ -12,7 +12,7 @@
   max-width: calc(100% - 40px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 22px;
   box-shadow: var(--shadow-hover);
@@ -142,7 +142,7 @@
   max-height: calc(100% - 40px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 22px;
   box-shadow: var(--shadow-hover);
@@ -390,34 +390,6 @@
   align-items: center;
   gap: 10px;
   padding: 6px 4px 12px;
-}
-
-.wc-timer {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.wc-timer.danger {
-  color: var(--danger);
-}
-
-.wc-timer.danger .wc-timer-num {
-  color: var(--danger);
-  animation: turn-pulse 0.8s ease-in-out infinite;
-}
-
-.wc-timer-num {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 13px;
-  font-weight: 700;
-  font-family: var(--mono);
-  color: var(--text-h);
 }
 
 .wc-turn-name {
@@ -714,7 +686,7 @@
   flex-shrink: 0;
   font-size: 10px;
   font-weight: 700;
-  color: #fff;
+  color: var(--on-solid);
   border-radius: 5px;
   padding: 1px 5px;
   line-height: 1.4;
@@ -866,11 +838,11 @@
 
 /* 마지막 착수·승리 줄 표시는 판 색이 바뀌었으니 흰 링을 한 겹 깔아 두 돌 모두에서 보이게 한다 */
 .omok-stone.last {
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent);
+  box-shadow: 0 0 0 2px var(--on-solid), 0 0 0 4px var(--accent);
 }
 
 .omok-stone.win {
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent), 0 0 9px 2px var(--accent);
+  box-shadow: 0 0 0 2px var(--on-solid), 0 0 0 4px var(--accent), 0 0 9px 2px var(--accent);
 }
 
 /* ---------- 모바일 (≤720px) ---------- */
@@ -1007,4 +979,28 @@
 
 .bingo-log-who {
   color: var(--text-faint);
+}
+
+
+/* ---------- 방장 전용 강제 종료 ---------- */
+
+/* 게임 패널 맨 아래, 다른 버튼들과 구분되게 선 하나 위에 둔다 —
+   판을 접는 동작이라 "새 라운드" 같은 진행 버튼과 섞이면 안 된다. */
+.host-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.host-end-btn {
+  color: var(--danger);
+  border-color: var(--accent-border);
+}
+
+.host-end-note {
+  font-size: 11px;
 }

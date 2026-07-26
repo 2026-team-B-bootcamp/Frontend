@@ -4,8 +4,7 @@ import { motion } from 'motion/react'
 import { useAuth } from '../auth/authContext'
 import { listServers, type Server } from './api'
 import { ServerForms } from './ServerForms'
-
-const LAST_SERVER_KEY = 'last_server_id'
+import { LAST_SERVER_KEY } from '../../shared/lib/storageKeys'
 
 /**
  * /servers 게이트:

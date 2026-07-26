@@ -3,14 +3,14 @@
  * 흐름: OmokPanel(여기) → omok/api.ts → shared/api/client.ts → 백엔드 오목 라우터.
  * 실제 판 그리기는 OmokBoard에 위임하고, 여기서는 상태 관리와 이벤트 처리만 한다.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
-import { BLACK, getOmok, joinOmok, placeStone, resetOmok, type OmokState } from './api'
-import { ApiError } from '../../../shared/api/client'
-import { fireWinConfetti } from '../../../shared/lib/confetti'
+import { BLACK, getOmok, joinOmok, placeStone, resetOmok } from './api'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameSession } from '../useGameSession'
+import { useWinnerConfetti } from '../useWinnerConfetti'
 import { OmokBoard } from './OmokBoard'
+import { motion } from 'motion/react'
 
 export function OmokPanel({
   channelId,
@@ -20,64 +20,13 @@ export function OmokPanel({
   subscribe: Subscribe
 }) {
   const { userId } = useAuth()
-  const [state, setState] = useState<OmokState | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const prevWinnerRef = useRef<number | null>(null)
-
-  const refetch = useCallback(() => {
-    getOmok(channelId)
-      .then((s) => setState(s))
-      .catch(() => {
-        // 일시적 실패는 마지막 상태 유지
-      })
-      .finally(() => setLoading(false))
-  }, [channelId])
-
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-
-  // omok.state 이벤트는 서버가 매 착수마다 최신 판 상태를 그대로 보내주므로 바로 반영하고,
-  // 재연결(ws.open) 시에는 최신 상태를 다시 조회한다
-  useEffect(
-    () =>
-      subscribe((e) => {
-        if (e.type === 'omok.state') {
-          setState(e.payload as unknown as OmokState)
-        } else if (e.type === 'ws.open') {
-          refetch()
-        }
-      }),
-    [subscribe, refetch],
-  )
+  const { state, loading, error, busy, run } = useGameSession('omok', channelId, subscribe, getOmok)
 
   const winner = state?.winner_user_id ?? null
   const finished = state?.status === 'finished'
 
   // 게임이 막 끝났고(finished) 그 승자가 새로 정해진 순간(이전엔 없었음) 나라면 축하 연출
-  useEffect(() => {
-    if (finished && winner !== null && prevWinnerRef.current === null && winner === userId) {
-      fireWinConfetti()
-    }
-    prevWinnerRef.current = finished ? winner : null
-  }, [finished, winner, userId])
-
-  // 참여/착수/초기화처럼 서버에 요청을 보내는 동작들을 공통 처리(로딩·에러 상태 관리)하는 헬퍼
-  async function run(fn: () => Promise<OmokState>) {
-    setBusy(true)
-    setError(null)
-    try {
-      setState(await fn())
-      return true
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '요청에 실패했습니다')
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
+  useWinnerConfetti(finished, winner, userId)
 
   if (loading) return <p className="muted panel-note">불러오는 중…</p>
 
@@ -187,6 +136,8 @@ export function OmokPanel({
           </button>
         </>
       )}
+
+      <HostEndButton channelId={channelId} kind="omok" hostUserId={state.host_user_id} />
     </div>
   )
 }

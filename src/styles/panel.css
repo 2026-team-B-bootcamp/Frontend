@@ -5,7 +5,7 @@
   width: 340px;
   flex-shrink: 0;
   border-left: 1px solid var(--border);
-  background: #fff;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -148,12 +148,84 @@
   padding: 6px 4px;
 }
 
+/* "이 모임의 관심사 보기" — 통계 모달을 다시 여는 버튼.
+   목록 위에 알약으로 얹어 멤버 행들과 섞이지 않게 한다. */
+.members-stats-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-h);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 200ms var(--ease), border-color 200ms var(--ease),
+    transform 200ms var(--ease);
+}
+
+.members-stats-btn:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  transform: translateY(-1px);
+}
+
 .member-row {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   padding: 8px 6px;
   border-radius: 10px;
+}
+
+/* 방장 표시 — 이름 옆 작은 배지 */
+.member-owner-badge {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-2-bg);
+  border: 1px solid var(--accent-2-border);
+  color: var(--accent-2-text);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+/* 내보내기 — 되돌리기 어려운 동작이라 평소엔 숨기고 그 행에 올렸을 때만 꺼낸다.
+   색도 눌러도 되는 회색이 아니라 위험(danger)으로 물들여 실수를 줄인다. */
+.member-kick {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--text-faint);
+  opacity: 0;
+  transition: opacity 160ms var(--ease), background 160ms var(--ease),
+    color 160ms var(--ease);
+}
+
+.member-row:hover .member-kick,
+.member-kick:focus-visible {
+  opacity: 1;
+}
+
+.member-kick:hover {
+  background: rgba(224, 82, 60, 0.14);
+  color: var(--danger);
+}
+
+.member-kick:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* 멤버 행 — 라포 영역이므로 코랄 틴트 호버 */
@@ -176,7 +248,7 @@
   position: absolute;
   right: -2px;
   bottom: -2px;
-  border: 2px solid #fff;
+  border: 2px solid var(--on-solid);
   width: 11px;
   height: 11px;
 }

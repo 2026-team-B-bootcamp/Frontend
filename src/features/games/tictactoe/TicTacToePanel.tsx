@@ -3,21 +3,14 @@
  * 흐름: TicTacToePanel → tictactoe/api.ts → shared/api/client.ts → 백엔드 tictactoe 라우터.
  * 판 그리기는 TicTacToeBoard에 위임한다. 구조는 오목 패널과 동일하다.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
-import {
-  X,
-  getTicTacToe,
-  joinTicTacToe,
-  placeMark,
-  resetTicTacToe,
-  type TicTacToeState,
-} from './api'
-import { ApiError } from '../../../shared/api/client'
-import { fireWinConfetti } from '../../../shared/lib/confetti'
+import { X, getTicTacToe, joinTicTacToe, placeMark, resetTicTacToe } from './api'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameSession } from '../useGameSession'
+import { useWinnerConfetti } from '../useWinnerConfetti'
 import { TicTacToeBoard } from './TicTacToeBoard'
+import { motion } from 'motion/react'
 
 export function TicTacToePanel({
   channelId,
@@ -27,57 +20,17 @@ export function TicTacToePanel({
   subscribe: Subscribe
 }) {
   const { userId } = useAuth()
-  const [state, setState] = useState<TicTacToeState | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const prevWinnerRef = useRef<number | null>(null)
-
-  const refetch = useCallback(() => {
-    getTicTacToe(channelId)
-      .then((s) => setState(s))
-      .catch(() => {
-        // 일시적 실패는 마지막 상태 유지
-      })
-      .finally(() => setLoading(false))
-  }, [channelId])
-
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-
-  useEffect(
-    () =>
-      subscribe((e) => {
-        if (e.type === 'tictactoe.state') setState(e.payload as unknown as TicTacToeState)
-        else if (e.type === 'ws.open') refetch()
-      }),
-    [subscribe, refetch],
+  const { state, loading, error, busy, run } = useGameSession(
+    'tictactoe',
+    channelId,
+    subscribe,
+    getTicTacToe,
   )
 
   const winner = state?.winner_user_id ?? null
   const finished = state?.status === 'finished'
 
-  useEffect(() => {
-    if (finished && winner !== null && prevWinnerRef.current === null && winner === userId) {
-      fireWinConfetti()
-    }
-    prevWinnerRef.current = finished ? winner : null
-  }, [finished, winner, userId])
-
-  async function run(fn: () => Promise<TicTacToeState>) {
-    setBusy(true)
-    setError(null)
-    try {
-      setState(await fn())
-      return true
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '요청에 실패했습니다')
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
+  useWinnerConfetti(finished, winner, userId)
 
   if (loading) return <p className="muted panel-note">불러오는 중…</p>
 
@@ -177,6 +130,8 @@ export function TicTacToePanel({
           </button>
         </>
       )}
+
+      <HostEndButton channelId={channelId} kind="tictactoe" hostUserId={state.host_user_id} />
     </div>
   )
 }

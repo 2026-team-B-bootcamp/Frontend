@@ -2,7 +2,7 @@
  * 빙고 게임의 백엔드 호출 모음 — shared/api/client.ts의 apiFetch를 통해 백엔드 빙고 라우터와 통신한다.
  * BingoPanel이 이 함수들을 호출해 서버 상태를 가져오고 바꾼다(보드 그리기는 BingoBoard가 담당).
  */
-import { apiFetch, ApiError } from '../../../shared/api/client'
+import { apiFetch, apiFetchOrNull } from '../../../shared/api/client'
 
 export interface BingoPlayer {
   user_id: number
@@ -28,6 +28,8 @@ export interface BingoState {
   turn_user_id: number | null
   // 호출된 순서 그대로의 기록. called_numbers는 정렬된 집합이라 순서를 알 수 없다.
   call_log: BingoCall[]
+  // 이 판을 연 사람(방장). 이 사람만 강제 종료할 수 있다.
+  host_user_id: number | null
 }
 
 // 게임 참여(또는 새 라운드 시작) 요청 — 서버가 내 새 보드를 만들어 최신 상태를 돌려준다
@@ -49,11 +51,6 @@ export function clickBingo(channelId: number, number: number) {
 }
 
 // 현재 상태 조회 — 아직 게임이 시작되지 않아 404가 나면 에러 대신 null로 처리해 화면을 단순하게 만든다
-export async function getBingo(channelId: number): Promise<BingoState | null> {
-  try {
-    return await apiFetch<BingoState>(`/channels/${channelId}/bingo`)
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 404) return null
-    throw err
-  }
+export function getBingo(channelId: number) {
+  return apiFetchOrNull<BingoState>(`/channels/${channelId}/bingo`)
 }

@@ -202,6 +202,43 @@ export function GifIcon({ size = 18 }: { size?: number }) {
   )
 }
 
+// 이름 바꾸기(서버·채널) 버튼용 연필 아이콘
+export function PencilIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="m14.5 7.5 2 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+// 멤버 내보내기(강퇴) 버튼용 — 사람 옆에 ×
+export function UserMinusIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="9.5" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M3.5 19.5c0-3 2.7-4.8 6-4.8 1 0 2 .17 2.8.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="m16 15.5 4.5 4.5m0-4.5L16 20"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 // 메시지 삭제 등 "지우기" 동작에 쓰는 휴지통 아이콘
 export function TrashIcon({ size = 16 }: { size?: number }) {
   return (
@@ -213,6 +250,18 @@ export function TrashIcon({ size = 16 }: { size?: number }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  )
+}
+
+// 사이드바 머리의 모임 메뉴(⋯)용 — 파괴적 동작(모임 삭제·나가기)을 접어두는 자리.
+// 이름 바꾸기 연필 옆에 휴지통을 그대로 두면 한 칸 차이로 모임이 통째로 날아간다.
+export function MoreIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="12" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="19" cy="12" r="1.8" />
     </svg>
   )
 }

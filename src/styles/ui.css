@@ -82,7 +82,7 @@
   border-radius: 999px;
   border: none;
   background: var(--text-h);
-  color: #fff;
+  color: var(--on-solid);
   font-weight: 600;
   box-shadow: var(--shadow);
   transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
@@ -113,6 +113,46 @@
 .btn.ghost:hover {
   background: var(--border);
   box-shadow: none;
+}
+
+/* 되돌릴 수 없는 동작(메시지 삭제 등) — 붉은 면으로 "이건 파괴적이다"를 미리 알린다 */
+.btn.danger {
+  background: var(--danger);
+  color: var(--on-solid);
+}
+
+/* 삭제 확인 모달: 무엇을 지우는지 보여주는 미리보기 + 버튼 줄 */
+.del-preview {
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  /* 긴 메시지는 잘리되 스크롤로 다 볼 수 있게 */
+  max-height: 140px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.del-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* 모임 삭제처럼 피해 범위가 큰 동작에서 이름을 그대로 받아 적게 하는 칸.
+   손이 먼저 움직여 확인 버튼을 눌러버리는 것을 막는 마지막 턱이다. */
+.confirm-type {
+  display: block;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.confirm-type .input {
+  margin-top: 7px;
 }
 
 .btn.small {
@@ -227,7 +267,7 @@
 }
 
 .banner.lose {
-  background: #fff;
+  background: var(--bg);
   border: none;
   color: var(--text-h);
 }
@@ -279,7 +319,7 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  color: #fff;
+  color: var(--on-solid);
   font-weight: 600;
   flex-shrink: 0;
   overflow: hidden;

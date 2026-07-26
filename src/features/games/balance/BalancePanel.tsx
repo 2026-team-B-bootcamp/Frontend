@@ -3,7 +3,7 @@
  * 흐름: BalancePanel → balance/api.ts → 백엔드 balance 라우터. 다수 참여형.
  * 브로드캐스트(balance.state)엔 개인 투표가 없으므로, 내 투표(my_vote)는 로컬에서 유지한다.
  */
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
 import {
@@ -15,8 +15,9 @@ import {
   type BalanceState,
   type Side,
 } from './api'
-import { ApiError } from '../../../shared/api/client'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameSession } from '../useGameSession'
 
 function mmss(totalSec: number) {
   const m = Math.floor(totalSec / 60)
@@ -32,32 +33,27 @@ export function BalancePanel({
   subscribe: Subscribe
 }) {
   const { userId } = useAuth()
-  const [state, setState] = useState<BalanceState | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  // balance.state 브로드캐스트엔 my_vote가 없어서 이 훅의 표준 "{kind}.state" 자동
+  // 구독을 끄고(handleStateEvent: false), 아래에서 이전 my_vote를 병합하는 전용
+  // 구독을 따로 건다.
+  const { state, setState, loading, error, busy, run, refetch } = useGameSession(
+    'balance',
+    channelId,
+    subscribe,
+    getBalance,
+    { handleStateEvent: false },
+  )
   const [optA, setOptA] = useState('')
   const [optB, setOptB] = useState('')
   const [comment, setComment] = useState('')
   const [now, setNow] = useState(() => Date.now())
   const finishSyncedRef = useRef(false)
 
-  const refetch = useCallback(() => {
-    getBalance(channelId)
-      .then((s) => setState(s))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [channelId])
-
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-
   useEffect(
     () =>
       subscribe((e) => {
         if (e.type === 'balance.state') {
-          const p = e.payload as unknown as BalanceState
+          const p = e.payload as BalanceState
           // 브로드캐스트엔 my_vote가 없으니 내 값은 유지한다
           setState((prev) => ({ ...p, my_vote: p.my_vote ?? prev?.my_vote ?? null }))
           finishSyncedRef.current = false
@@ -65,7 +61,7 @@ export function BalancePanel({
           refetch()
         }
       }),
-    [subscribe, refetch],
+    [subscribe, refetch, setState],
   )
 
   const active = Boolean(state?.active)
@@ -87,20 +83,6 @@ export function BalancePanel({
       refetch()
     }
   }, [active, finished, state?.finished, refetch])
-
-  async function run(fn: () => Promise<BalanceState>) {
-    setBusy(true)
-    setError(null)
-    try {
-      setState(await fn())
-      return true
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '요청에 실패했습니다')
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function onStart(e: FormEvent) {
     e.preventDefault()
@@ -244,6 +226,8 @@ export function BalancePanel({
           새 밸런스 만들기
         </button>
       )}
+
+      <HostEndButton channelId={channelId} kind="balance" hostUserId={state.host_user_id} />
     </div>
   )
 }

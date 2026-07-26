@@ -1,5 +1,9 @@
 /**
- * 관심사 태그 설정 모달 — 서버에 처음 들어와 태그가 비어 있는 사람에게 자동으로 뜬다.
+ * 관심사 태그 설정 모달 — 두 가지 방식으로 열린다.
+ * ① 온보딩(mode="onboarding"): 서버에 처음 들어와 태그가 비어 있는 사람에게 자동으로 뜬다.
+ * ② 다시 보기(mode="browse"): 멤버 패널의 "이 모임의 관심사 보기" 버튼.
+ * 보여주는 내용은 같고 문구와 버튼만 다르다 — 두 번째로 여는 사람에게 "3개만
+ * 알려주세요"·"나중에 하기"는 이미 지난 이야기다.
  *
  * 그냥 빈 칸 3개를 내밀면 뭘 적어야 할지 막막하다. 그래서 먼저 "이 모임엔 이런 관심사를
  * 가진 사람들이 있어요"를 보여준다: 상위 태그 분포(막대 + 인원수), AI가 만든 한줄 요약,
@@ -26,14 +30,21 @@ function colorFor(tag: string) {
 export function TagSetupModal({
   serverId,
   serverName,
-  onClose,
+  mode = 'onboarding',
+  onDismiss,
   onSaved,
 }: {
   serverId: number
   serverName?: string
-  onClose: () => void
+  // 처음 권하는 자리인가(onboarding), 직접 열어본 자리인가(browse)
+  mode?: 'onboarding' | 'browse'
+  // 저장하지 않고 닫는다. 온보딩에서는 부모가 이걸 "이 서버에선 다시 묻지 말라"로
+  // 기록하고, 직접 열어본 경우에는 그냥 닫기다.
+  onDismiss: () => void
+  // 저장 성공 — 닫는 일까지 부모가 맡는다. 여기서 onDismiss를 부르면 "미뤘다"로 잘못 기록된다.
   onSaved: () => void
 }) {
+  const onboarding = mode === 'onboarding'
   const [stats, setStats] = useState<TagStats | null>(null)
   const [tags, setTags] = useState<[string, string, string]>(['', '', ''])
   const [saving, setSaving] = useState(false)
@@ -86,8 +97,10 @@ export function TagSetupModal({
     setError(null)
     try {
       await upsertTags(serverId, t1, t2, t3)
+      // 닫는 일은 onSaved 안에서 부모가 한다 — 예전엔 여기서 onClose를 불렀는데,
+      // 부모가 그걸 "나중에 하기"로 기록하는 바람에 정상적으로 등록을 끝낸 서버에도
+      // "미뤘음" 표시가 남았다. 그 기록이 다른 계정의 온보딩까지 막았다.
       onSaved()
-      onClose()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '저장에 실패했습니다')
     } finally {
@@ -114,10 +127,11 @@ export function TagSetupModal({
         exit={{ opacity: 0, y: 16, scale: 0.98 }}
         transition={{ duration: 0.22, ease: 'easeOut' }}
       >
-        <h2>관심사 3개만 알려주세요</h2>
+        <h2>{onboarding ? '관심사 3개만 알려주세요' : '이 모임의 관심사'}</h2>
         <p className="muted tag-setup-lead">
-          {serverName ?? '이 모임'} 에서 나를 소개할 관심사예요. 겹치는 사람이 있으면 이름 옆에
-          반짝이며 표시돼요.
+          {onboarding
+            ? `${serverName ?? '이 모임'} 에서 나를 소개할 관심사예요. 겹치는 사람이 있으면 이름 옆에 반짝이며 표시돼요.`
+            : `${serverName ?? '이 모임'} 사람들이 무엇을 좋아하는지 모아봤어요. 아래에서 내 관심사도 고칠 수 있어요.`}
         </p>
 
         {/* ① 이 모임의 관심사 지형도 — 뭘 적을지 감을 잡는 자리 */}
@@ -220,11 +234,11 @@ export function TagSetupModal({
             </div>
           ))}
           <div className="row" style={{ justifyContent: 'flex-end', marginTop: 4 }}>
-            <button type="button" className="btn ghost" onClick={onClose}>
-              나중에 하기
+            <button type="button" className="btn ghost" onClick={onDismiss}>
+              {onboarding ? '나중에 하기' : '닫기'}
             </button>
             <button type="submit" className="btn" disabled={saving}>
-              {saving ? '저장 중…' : '시작하기'}
+              {saving ? '저장 중…' : onboarding ? '시작하기' : '저장'}
             </button>
           </div>
         </form>

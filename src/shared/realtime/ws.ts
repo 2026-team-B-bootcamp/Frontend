@@ -5,7 +5,7 @@ import { BASE_URL } from '../api/client'
 
 export interface WsEvent {
   type: string
-  payload: Record<string, unknown>
+  payload: unknown
 }
 
 export interface ChannelSocket {

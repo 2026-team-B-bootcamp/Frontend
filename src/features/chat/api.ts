@@ -12,8 +12,11 @@ export interface Message {
   avatar_url: string | null
   tags: string[]
   content: string
-  // 'user' = 사람이 쓴 메시지, 'welcome' = 첫 입장 시 자동 생성된 환영·자기소개 카드
-  kind: 'user' | 'welcome'
+  // 'user'    = 사람이 쓴 메시지
+  // 'welcome' = 첫 입장 시 자동 생성된 환영·자기소개 카드
+  // 'game'    = 게임이 새로 열렸다는 입장 카드. content에 게임 키만 들어있고
+  //             (bingo·omok…) 화면에 보일 문구는 프런트가 그릴 때 만든다.
+  kind: 'user' | 'welcome' | 'game'
   created_at: string
 }
 

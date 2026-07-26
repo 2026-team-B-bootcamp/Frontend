@@ -34,3 +34,9 @@ dist-ssr
 
 # Vercel CLI 링크 정보 + OIDC 토큰
 .vercel
+
+# Playwright E2E 산출물 (실패 스크린샷·영상·트레이스·리포트)
+test-results/
+playwright-report/
+blob-report/
+.playwright/

@@ -11,7 +11,7 @@
   max-width: calc(100% - 40px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 22px;
   box-shadow: var(--shadow-hover);
@@ -73,7 +73,7 @@
 .wb-canvas-wrap {
   width: 100%;
   aspect-ratio: 4 / 3;
-  background: #fff;
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;

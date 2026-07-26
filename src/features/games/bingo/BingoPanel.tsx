@@ -3,14 +3,16 @@
  * 흐름: BingoPanel → bingo/api.ts → 백엔드 빙고 라우터. 판 그리기는 BingoBoard에 위임한다.
  * 진행 중 채널에 들어온(참가 못 한) 사람은 관전자로서 호출 숫자·점수만 본다.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { useAuth } from '../../auth/authContext'
-import { clickBingo, getBingo, joinBingo, startBingo, type BingoState } from './api'
+import { clickBingo, getBingo, joinBingo, startBingo } from './api'
 import { ApiError } from '../../../shared/api/client'
 import { BingoBoard } from './BingoBoard'
 import { fireWinConfetti } from '../../../shared/lib/confetti'
 import type { Subscribe } from '../../../shared/realtime/useChannelSocket'
+import { HostEndButton } from '../HostControls'
+import { useGameSession } from '../useGameSession'
 
 export function BingoPanel({
   channelId,
@@ -20,24 +22,16 @@ export function BingoPanel({
   subscribe: Subscribe
 }) {
   const { userId } = useAuth()
-  const [state, setState] = useState<BingoState | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  // bingo.update 페이로드엔 전체 상태가 없어서 이 훅의 표준 "{kind}.state" 자동 구독을
+  // 끄고(handleStateEvent: false), 아래에서 refetch로만 갱신하는 전용 구독을 따로 건다.
+  const { state, setState, loading, error, setError, busy, run, refetch } = useGameSession(
+    'bingo',
+    channelId,
+    subscribe,
+    getBingo,
+    { handleStateEvent: false },
+  )
   const prevWinnerRef = useRef<number | null>(null)
-
-  const refetch = useCallback(() => {
-    getBingo(channelId)
-      .then((s) => setState(s))
-      .catch(() => {
-        // 일시적 실패는 마지막 상태 유지
-      })
-      .finally(() => setLoading(false))
-  }, [channelId])
-
-  useEffect(() => {
-    refetch()
-  }, [refetch])
 
   useEffect(
     () =>
@@ -54,20 +48,6 @@ export function BingoPanel({
     }
     prevWinnerRef.current = winner
   }, [winner, userId])
-
-  async function run(fn: () => Promise<BingoState>) {
-    setBusy(true)
-    setError(null)
-    try {
-      setState(await fn())
-      return true
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '요청에 실패했습니다')
-      return false
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function onCellClick(n: number) {
     if (winner !== null) return
@@ -163,6 +143,10 @@ export function BingoPanel({
             </button>
           )}
         </div>
+        {/* 대기 로비는 이 패널에서 따로 렌더되는 화면이라, 아래 진행 화면에 붙인
+            강제 종료 버튼이 여기까지 오지 않는다. 정작 판을 접고 싶은 순간이
+            "열어놨는데 아무도 안 들어올 때"라 이 화면에 꼭 있어야 한다. */}
+        <HostEndButton channelId={channelId} kind="bingo" hostUserId={state.host_user_id} />
       </div>
     )
   }
@@ -255,6 +239,8 @@ export function BingoPanel({
           {busy ? '시작 중…' : '새 라운드 시작'}
         </button>
       )}
+
+      <HostEndButton channelId={channelId} kind="bingo" hostUserId={state.host_user_id} />
     </div>
   )
 }

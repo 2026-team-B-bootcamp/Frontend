@@ -17,6 +17,8 @@ const GAME_EVENTS = [
   'tictactoe.state',
   'balance.state',
   'chosung.state',
+  // 방장이 판을 접으면 그 게임은 "없음"으로 돌아간다 — 뱃지도 함께 지워져야 한다
+  'game.ended',
   'ws.open',
 ]
 
