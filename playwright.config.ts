@@ -35,8 +35,31 @@ export default defineConfig({
     actionTimeout: 15_000,
   },
 
+  /**
+   * PC와 모바일 두 폭에서 같은 스펙을 돌린다.
+   *
+   * 이 앱의 반응형은 순전히 화면 폭으로 갈린다 — useMediaQuery.ts는 matchMedia만
+   * 보고 UA를 보지 않으므로, 디바이스를 흉내내는 것보다 브레이크포인트
+   * (720px 셸, 900px 멤버 패널)의 양쪽에 서는 것이 중요하다. Pixel 5(393px)는
+   * 두 기준을 모두 밑돌아 모바일 레이아웃 전체를 태우고, 380px 초저폭 규칙
+   * (접속 인원 숨김)은 건드리지 않아 공통 스펙이 그대로 통과한다.
+   *
+   * 파일 이름으로 적용 범위를 가른다:
+   *   *.spec.ts          → 양쪽 다 (기본)
+   *   *.mobile.spec.ts   → 모바일 전용 (드로어·오버레이·하단 시트)
+   *   *.desktop.spec.ts  → PC 전용 (드래그·리사이즈 — 모바일엔 그 UI 자체가 없다)
+   */
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /\.mobile\.spec\.ts$/,
+    },
+    {
+      name: 'mobile',
+      use: { ...devices['Pixel 5'] },
+      testIgnore: /\.desktop\.spec\.ts$/,
+    },
   ],
 
   // 백엔드가 떠 있는지 먼저 확인하고, 없으면 바로 알려준다 (전부 타임아웃으로

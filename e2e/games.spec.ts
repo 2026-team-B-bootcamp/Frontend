@@ -1,12 +1,5 @@
 import { expect, test } from '@playwright/test'
-import {
-  channelUrl,
-  createServer,
-  createUser,
-  joinServer,
-  openAs,
-  uniqueId,
-} from './fixtures'
+import { channelUrl, createServer, createUser, joinServer, openAs } from './fixtures'
 
 /**
  * 미니게임 — 두 사람이 실제로 한 판을 굴린다.
@@ -210,39 +203,6 @@ test.describe('그림판 · 같이보기', () => {
     } finally {
       await a.context.close()
       await b.context.close()
-    }
-  })
-})
-
-/** 화면이 좁아도 채팅이 쓸 수 있어야 한다 (발표 때 노트북·폰이 섞인다). */
-test.describe('모바일 폭', () => {
-  test.use({ viewport: { width: 390, height: 780 } })
-
-  test('좁은 화면에서 드로어로 채널을 옮길 수 있다', async ({ browser }) => {
-    const host = await createUser('mobile')
-    const server = await createServer(host)
-    const { context, page } = await openAs(browser, host, server)
-    try {
-      await page.goto(channelUrl(server))
-      await expect(page.locator('.chat-editor-input')).toBeVisible()
-
-      // 좁은 화면에서는 사이드바가 드로어로 숨는다.
-      await page.getByRole('button', { name: '채널 목록 열기' }).click()
-      await expect(page.locator('.nav-drawer.open')).toBeVisible()
-
-      // 서버 목록이 도착할 때까지 기다린다 — 그전에 Enter를 치면 채널 추가 폼이
-      // `!server` 가드에 걸려 아무 일도 하지 않고, 부하가 걸린 실행에서만 간헐적으로 터진다.
-      await expect(page.locator('.sidebar-server-name')).toHaveText(server.name)
-
-      const name = `모바일${uniqueId().slice(-4)}`
-      await page.getByPlaceholder('+ 새 채널').fill(name)
-      await page.getByPlaceholder('+ 새 채널').press('Enter')
-
-      await expect(page.locator('.chat-channel-name')).toContainText(name)
-      // 채널을 고르면 드로어는 닫혀 채팅으로 돌아와야 한다.
-      await expect(page.locator('.nav-drawer.open')).toHaveCount(0)
-    } finally {
-      await context.close()
     }
   })
 })
