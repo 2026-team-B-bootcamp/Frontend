@@ -55,7 +55,7 @@
 .avatar-edit-initial {
   font-size: 34px;
   font-weight: 700;
-  color: #fff;
+  color: var(--on-solid);
 }
 
 .avatar-edit-badge {
@@ -84,7 +84,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(25, 26, 35, 0.4);
+  background: var(--overlay);
 }
 
 .avatar-edit-spinner::after {
@@ -96,7 +96,7 @@
   height: 22px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
+  border-top-color: var(--on-solid);
   animation: profile-spin 700ms linear infinite;
 }
 
