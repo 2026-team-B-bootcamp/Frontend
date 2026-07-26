@@ -4,7 +4,7 @@
  * 다크모드 토글과 같은 자리·같은 감각이지만 앱 전체가 아니라 왼쪽 프레임만 바꾼다.
  * 색 값과 저장은 shared/lib/sidebarTheme.ts가 갖고 있고, 여기는 고르는 UI만 맡는다.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { PaletteIcon } from '../../shared/ui/icons'
 import {
@@ -12,6 +12,7 @@ import {
   applySidebarTheme,
   getSidebarTheme,
 } from '../../shared/lib/sidebarTheme'
+import { useDismissOnOutside } from '../../shared/lib/useDismissOnOutside'
 
 export function SidebarThemePicker() {
   const [open, setOpen] = useState(false)
@@ -19,21 +20,7 @@ export function SidebarThemePicker() {
   const rootRef = useRef<HTMLDivElement>(null)
 
   // 바깥을 누르거나 Esc를 누르면 닫는다 — 팝오버가 열린 채로 남아 채널 목록을 가리지 않게.
-  useEffect(() => {
-    if (!open) return
-    function onDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  useDismissOnOutside(rootRef, open, () => setOpen(false))
 
   function pick(key: string) {
     applySidebarTheme(key)
