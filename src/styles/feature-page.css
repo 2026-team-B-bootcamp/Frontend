@@ -13,7 +13,7 @@
   align-items: center;
   gap: 14px;
   padding: 14px 20px;
-  background: #fff;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   /* 게임이 길어져 스크롤해도 "채팅으로" 돌아갈 길은 항상 보이게 둔다 */
   position: sticky;
@@ -57,7 +57,7 @@
 .feature-page-panel {
   width: 100%;
   max-width: 560px;
-  background: #fff;
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 22px;
   box-shadow: var(--shadow);

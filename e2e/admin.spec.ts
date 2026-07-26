@@ -16,8 +16,11 @@ import {
   channelUrl,
   createServer,
   createUser,
+  isPanelOverlay,
   joinServer,
   openAs,
+  openChannelNav,
+  openMembersPanel,
   uniqueId,
 } from './fixtures'
 
@@ -28,7 +31,13 @@ test.describe('사이드바 색 테마', () => {
     const { context, page } = await openAs(browser, owner, server)
 
     await page.goto(channelUrl(server))
+    // 셸이 그려지길 먼저 기다린다 — openChannelNav의 토글 가시성 판정(isVisible)은 즉시
+    // 판정이라, 앱이 아직 렌더되기 전에 부르면 "드로어 토글이 안 보인다"로 잘못 읽고
+    // 드로어를 못 연 채로 넘어간다(그 뒤 sidebar-server-name 체크는 화면 밖이어도 통과해버려
+    // 겉보기엔 문제없어 보이다가 실제 클릭에서만 "뷰포트 밖" 에러로 드러난다).
     await expect(page.locator('.chat-sidebar')).toBeVisible()
+    // 색 고르기 버튼은 채널 사이드바 안에 있다 — 모바일에선 드로어를 열어야 닿는다
+    await openChannelNav(page)
 
     // 아무것도 고르지 않은 첫 방문 → 아이보리
     await expect(page.locator('html')).toHaveAttribute('data-sidebar-theme', 'ivory')
@@ -56,6 +65,12 @@ test.describe('이름 바꾸기', () => {
     const b = await openAs(browser, guest, server)
     await a.page.goto(channelUrl(server))
     await b.page.goto(channelUrl(server))
+    // 셸이 그려지길 먼저 기다린다 — 그전에 openChannelNav를 부르면 드로어를 못 연 채로 넘어간다.
+    await expect(a.page.locator('.chat-sidebar')).toBeVisible()
+    await expect(b.page.locator('.chat-sidebar')).toBeVisible()
+    // 이름 바꾸기 버튼·사이드바 이름 모두 채널 사이드바 안 — 두 쪽 다 드로어를 연다
+    await openChannelNav(a.page)
+    await openChannelNav(b.page)
     await expect(a.page.locator('.sidebar-server-name')).toBeVisible()
     await expect(b.page.locator('.sidebar-server-name')).toBeVisible()
 
@@ -65,7 +80,7 @@ test.describe('이름 바꾸기', () => {
     await a.page.getByLabel('모임 이름').press('Enter')
 
     await expect(a.page.locator('.sidebar-server-name')).toHaveText(newServerName)
-    // 남의 화면도 새로고침 없이 따라온다 (server.renamed 브로드캐스트)
+    // 남의 화면도 새로고침 없이 따라온다 (server.renamed 브로드캐스트) — b는 드로어가 안 닫혀도 값은 바뀐다
     await expect(b.page.locator('.sidebar-server-name')).toHaveText(newServerName)
 
     const newChannelName = `잡담-${uniqueId().slice(-6)}`
@@ -88,6 +103,10 @@ test.describe('이름 바꾸기', () => {
     const server = await createServer(owner)
     const { context, page } = await openAs(browser, owner, server)
     await page.goto(channelUrl(server))
+    // 셸이 그려지길 먼저 기다린다 — 그전에 openChannelNav를 부르면 드로어 토글이 아직
+    // 안 보여 클릭을 건너뛰고, 드로어가 닫힌 채로 넘어간다.
+    await expect(page.locator('.chat-sidebar')).toBeVisible()
+    await openChannelNav(page)
     await expect(page.locator('.sidebar-server-name')).toHaveText(server.name)
 
     await page.getByRole('button', { name: '모임 이름 바꾸기' }).click()
@@ -117,11 +136,9 @@ test.describe('관심사 통계 다시 보기', () => {
     // 렌더되기 전에 물으면 "닫혀 있다"로 잘못 읽고 열려 있던 패널을 되레 닫는다.
     await expect(page.locator('.chat-sidebar')).toBeVisible()
 
-    // 이 폭(1280)에서는 멤버 패널이 기본으로 열려 있다. 혹시 닫혀 있으면 연다.
+    // 넓은 화면에선 멤버 패널이 기본으로 열려 있고, 좁은 화면에선 닫혀 있으니 열어준다.
     const statsBtn = page.getByRole('button', { name: '이 모임의 관심사 보기' })
-    if ((await page.locator('.side-panel').count()) === 0) {
-      await page.getByRole('button', { name: '멤버', exact: true }).click()
-    }
+    await openMembersPanel(page)
     await expect(statsBtn).toBeVisible()
     await statsBtn.click()
 
@@ -153,6 +170,14 @@ test.describe('멤버 내보내기', () => {
     const b = await openAs(browser, guest, server)
     await a.page.goto(channelUrl(server))
     await b.page.goto(channelUrl(server))
+    // 셸이 그려지길 먼저 기다린다 — 그전에 openMembersPanel을 부르면 아직 렌더 전이라
+    // "패널이 없다"로 잘못 읽고 토글을 눌러, 데스크톱처럼 기본으로 열려 있던 화면에서는
+    // 되레 닫아버릴 수 있다.
+    await expect(a.page.locator('.chat-sidebar')).toBeVisible()
+    await expect(b.page.locator('.chat-sidebar')).toBeVisible()
+    // 내보내기 버튼·멤버 행 모두 멤버 패널 안 — 모바일에선 기본 닫혀 있으니 연다
+    await openMembersPanel(a.page)
+    await openMembersPanel(b.page)
 
     // 방장 화면: 손님 행에 내보내기 버튼이 있다
     const kickBtn = a.page.getByRole('button', { name: `${guest.displayName}님 내보내기` })
@@ -191,6 +216,12 @@ test.describe('채널 삭제', () => {
     const b = await openAs(browser, guest, server)
     await a.page.goto(channelUrl(server))
     await b.page.goto(channelUrl(server))
+    // 셸이 그려지길 먼저 기다린다 — 그전에 openChannelNav를 부르면 드로어를 못 연 채로 넘어간다.
+    await expect(a.page.locator('.chat-sidebar')).toBeVisible()
+    await expect(b.page.locator('.chat-sidebar')).toBeVisible()
+    // 채널 행·휴지통 버튼 모두 채널 사이드바 안 — 두 쪽 다 드로어를 연다
+    await openChannelNav(a.page)
+    await openChannelNav(b.page)
     await expect(a.page.locator('.sidebar-channel-row')).toHaveCount(2)
     await expect(b.page.locator('.sidebar-channel-row')).toHaveCount(2)
 
@@ -220,6 +251,9 @@ test.describe('채널 삭제', () => {
     const server = await createServer(owner)
     const { context, page } = await openAs(browser, owner, server)
     await page.goto(channelUrl(server))
+    // 셸이 그려지길 먼저 기다린다 — 그전에 openChannelNav를 부르면 드로어를 못 연 채로 넘어간다.
+    await expect(page.locator('.chat-sidebar')).toBeVisible()
+    await openChannelNav(page)
 
     await expect(page.locator('.sidebar-channel-row')).toHaveCount(1)
     await page.locator('.sidebar-channel-row').first().hover()
@@ -242,7 +276,25 @@ test.describe('모임 나가기 / 삭제', () => {
     const b = await openAs(browser, guest, server)
     await a.page.goto(channelUrl(server))
     await b.page.goto(channelUrl(server))
+    // 셸이 그려지길 먼저 기다린다 — 그전에 openMembersPanel/openChannelNav를 부르면
+    // 아직 렌더 전이라 잘못 판정한다.
+    await expect(a.page.locator('.chat-sidebar')).toBeVisible()
+    await expect(b.page.locator('.chat-sidebar')).toBeVisible()
+
+    // 멤버 목록은 멤버 패널 안 — 먼저 열어서 인원수를 확인한다.
+    await openMembersPanel(a.page)
     await expect(a.page.locator('.member-row')).toHaveCount(2)
+    // 좁은 화면에서는 멤버 패널이 전체 화면 스크림과 함께 뜨는데, 그 스크림이 헤더까지
+    // 덮어 드로어 토글을 가로챈다 — 모임 메뉴를 보려면 먼저 닫는다. (넓은 화면에선 패널이
+    // 인라인이라 헤더를 가리지 않으므로 그대로 둔다 — Esc 리스너도 오버레이일 때만 붙는다.)
+    if (isPanelOverlay(a.page)) {
+      await a.page.keyboard.press('Escape')
+      await expect(a.page.locator('.side-panel')).toHaveCount(0)
+    }
+
+    // 모임 메뉴는 채널 사이드바 안 — 두 쪽 다 드로어를 연다
+    await openChannelNav(a.page)
+    await openChannelNav(b.page)
 
     // 방장 메뉴: 삭제만 (방장은 나갈 수 없다 — 백엔드가 400으로 막는 규칙과 짝)
     await a.page.locator('.sidebar-name-row').hover()
@@ -260,6 +312,9 @@ test.describe('모임 나가기 / 삭제', () => {
 
     // 나간 사람은 서버 목록으로, 남은 방장의 멤버 목록에서도 사라진다
     await expect(b.page).toHaveURL(/\/servers$/)
+    // 위에서 모임 메뉴를 보려고 멤버 패널을 닫아뒀다 — 좁은 화면에선 패널이 닫히면
+    // MembersPanel 자체가 언마운트되므로(.member-row가 DOM에서 사라진다), 다시 연다.
+    await openMembersPanel(a.page)
     await expect(a.page.locator('.member-row')).toHaveCount(1)
 
     await a.context.close()
@@ -278,7 +333,10 @@ test.describe('모임 나가기 / 삭제', () => {
     const b = await openAs(browser, guest, server)
     await a.page.goto(channelUrl(server))
     await b.page.goto(channelUrl(server))
+    // 셸이 그려지길 먼저 기다린다 — 그전에 openChannelNav를 부르면 드로어를 못 연 채로 넘어간다.
     await expect(a.page.locator('.chat-sidebar')).toBeVisible()
+    // 모임 메뉴는 채널 사이드바 안 — 모바일에선 드로어를 열어야 닿는다
+    await openChannelNav(a.page)
 
     await a.page.locator('.sidebar-name-row').hover()
     await a.page.getByRole('button', { name: '모임 메뉴' }).click()

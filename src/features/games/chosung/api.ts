@@ -5,26 +5,13 @@
  * 초성 일치·중복 검증은 서버 몫이며, submitChosung은 그 결과가 반영된 최신 상태를
  * 그대로 돌려받는다.
  */
-import { apiFetch, ApiError } from '../../../shared/api/client'
+import { apiFetch, apiFetchOrNull } from '../../../shared/api/client'
+import type { BombGameState } from '../bombGame'
 
-export interface ChosungPlayer {
-  user_id: number
-  display_name: string
-  alive: boolean
-}
-
-export interface ChosungState {
-  status: 'waiting' | 'playing' | 'finished'
+export interface ChosungState extends BombGameState {
   round: number
-  players: ChosungPlayer[]
-  turn_user_id: number | null
   prompt: string | null
   words: string[]
-  loser_user_id: number | null
-  seconds_left: number | null
-  last_event: string | null
-  // 이 판을 연 사람(방장). 이 사람만 강제 종료할 수 있다.
-  host_user_id: number | null
 }
 
 export function joinChosung(channelId: number) {
@@ -48,11 +35,6 @@ export function submitChosung(channelId: number, word: string) {
 
 // 아직 채널에 초성퀴즈 게임이 생성되지 않은 경우 서버가 404를 반환하는데,
 // 이 경우 에러를 던지지 않고 null로 변환해 "게임 없음" 상태로 다룰 수 있게 한다.
-export async function getChosung(channelId: number): Promise<ChosungState | null> {
-  try {
-    return await apiFetch<ChosungState>(`/channels/${channelId}/chosung`)
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 404) return null
-    throw err
-  }
+export function getChosung(channelId: number) {
+  return apiFetchOrNull<ChosungState>(`/channels/${channelId}/chosung`)
 }

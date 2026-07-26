@@ -145,6 +145,83 @@ export async function sendMessage(page: Page, text: string): Promise<void> {
   await page.getByRole('button', { name: '전송', exact: true }).click()
 }
 
+/* ── 뷰포트 중립 헬퍼 ───────────────────────────────────────────────────────
+ * 같은 spec을 데스크톱과 모바일 두 프로젝트에서 모두 돌리기 때문에, 화면 폭에
+ * 따라 UI가 갈리는 자리는 아래 헬퍼로만 접근한다. 스펙 안에 "이 폭에서는 패널이
+ * 열려 있다" 같은 가정을 박아두면 다른 프로젝트에서 그대로 깨진다.
+ *
+ * 실제로 레이아웃을 가르는 것은 순전히 화면 폭이다 — useMediaQuery.ts는
+ * matchMedia만 보고 UA는 보지 않는다. 그래서 폭으로 판정한다.
+ */
+
+/** 채팅 셸이 모바일(드로어) 레이아웃인지 — useMediaQuery.ts의 MOBILE_QUERY와 같은 값. */
+export const MOBILE_MAX_WIDTH = 720
+/** 멤버 패널이 오버레이로 바뀌는 폭 — useMediaQuery.ts의 PANEL_OVERLAY_QUERY와 같은 값. */
+export const PANEL_OVERLAY_MAX_WIDTH = 900
+
+export function isMobileLayout(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) <= MOBILE_MAX_WIDTH
+}
+
+export function isPanelOverlay(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 0) <= PANEL_OVERLAY_MAX_WIDTH
+}
+
+/**
+ * 채널 사이드바에 닿을 수 있는 상태로 만든다.
+ * 넓은 화면에선 이미 늘 보이고, 좁은 화면에선 드로어를 열어야 한다.
+ *
+ * ⚠️ 첫 줄의 대기가 핵심이다. `isVisible()`은 폴링 없이 그 순간을 판정하므로,
+ * goto 직후 앱이 그려지기 전에 부르면 토글을 "없다"로 읽고 드로어를 안 연다.
+ * 게다가 그 뒤 `.sidebar-server-name`의 toBeVisible()은 통과해버린다 —
+ * Playwright의 가시성 판정은 display/opacity만 보고 화면 밖으로 밀어낸
+ * transform은 보지 않기 때문이다. 그래서 실패가 여기서 안 나고 한참 뒤
+ * click()/hover()에서 "outside of viewport"로 터진다.
+ */
+export async function openChannelNav(page: Page): Promise<void> {
+  // 채팅 셸이 DOM에 올라올 때까지 — 이게 하이드레이션 완료 신호다.
+  await expect(page.locator('.chat-sidebar')).toBeAttached()
+
+  const toggle = page.getByRole('button', { name: '채널 목록 열기' })
+  // 이 버튼은 720px 이하에서만 display:inline-flex 다 (chat.css:20-23, :1501). 즉 보이면 모바일이다.
+  if (await toggle.isVisible()) {
+    await toggle.click()
+    await expect(page.locator('.nav-drawer.open')).toBeVisible()
+  }
+  await expect(page.locator('.sidebar-server-name')).toBeVisible()
+}
+
+/**
+ * 멤버 패널을 열린 상태로 만든다.
+ * 900px 초과에선 기본으로 열려 있고, 그 이하에선 닫힌 채 시작한다(ChatPage.tsx:72-74).
+ *
+ * ⚠️ openChannelNav와 같은 이유로, 헤더가 그려지기 전에 `.side-panel`을 세면
+ * 0이 나와 "닫혀 있다"로 오판한다. 토글 버튼을 먼저 기다린다.
+ */
+export async function openMembersPanel(page: Page): Promise<void> {
+  const toggle = page.getByRole('button', { name: '멤버', exact: true })
+  await expect(toggle).toBeVisible()
+
+  if ((await page.locator('.side-panel').count()) === 0) {
+    await toggle.click()
+  }
+  await expect(page.locator('.side-panel')).toBeVisible()
+}
+
+/**
+ * 좁은 화면에서 드로어와 멤버 패널을 동시에 열어두면 안 된다.
+ *
+ * 둘 다 `position:fixed; inset:0` 스크림을 깔기 때문에, 나중에 연 쪽의 스크림이
+ * 헤더 버튼 클릭을 가로챈다. 드로어(z-index 60) > 멤버 패널(50) > 스크림(45).
+ * Esc 리스너는 `panelIsOverlay`일 때만 붙으므로(ChatPage.tsx:172) 좁은 화면에서만 의미가 있다.
+ */
+export async function closeMembersPanelIfOverlay(page: Page): Promise<void> {
+  if (!isPanelOverlay(page)) return
+  if ((await page.locator('.side-panel').count()) === 0) return
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.side-panel')).toHaveCount(0)
+}
+
 /** 채팅 로그에 그 문구가 뜰 때까지 기다린다. */
 export function messageInLog(page: Page, text: string) {
   return page.locator('.chat-text', { hasText: text })

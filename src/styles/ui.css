@@ -82,7 +82,7 @@
   border-radius: 999px;
   border: none;
   background: var(--text-h);
-  color: #fff;
+  color: var(--on-solid);
   font-weight: 600;
   box-shadow: var(--shadow);
   transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
@@ -118,7 +118,7 @@
 /* 되돌릴 수 없는 동작(메시지 삭제 등) — 붉은 면으로 "이건 파괴적이다"를 미리 알린다 */
 .btn.danger {
   background: var(--danger);
-  color: #fff;
+  color: var(--on-solid);
 }
 
 /* 삭제 확인 모달: 무엇을 지우는지 보여주는 미리보기 + 버튼 줄 */
@@ -267,7 +267,7 @@
 }
 
 .banner.lose {
-  background: #fff;
+  background: var(--bg);
   border: none;
   color: var(--text-h);
 }
@@ -319,7 +319,7 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  color: #fff;
+  color: var(--on-solid);
   font-weight: 600;
   flex-shrink: 0;
   overflow: hidden;
