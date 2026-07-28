@@ -26,14 +26,14 @@ export const FLOAT_PILLS = [
 export const STATS = [
   { to: 6, suffix: '종', label: '채팅 옆에서 바로 하는 미니게임' },
   { to: 1, suffix: '분', label: '서버 만들고 초대까지' },
-  { to: 30, suffix: '초', label: '끝말잇기 턴 제한 — 긴장감 유지' },
+  { to: 120, suffix: '초', label: '도화선 하나로 폭탄 돌리기 — 끝말잇기·초성퀴즈' },
   { to: 100, suffix: '%', label: '실시간 — 새로고침 없는 대화' },
 ]
 
 /** 게임 그리드 6종 — 키는 games/gameKinds.ts·백엔드 카탈로그와 1:1 */
 export const GAME_CARDS = [
   { key: 'bingo', name: '빙고', desc: '한 판에서 같이 번호를 지워가는 클래식' },
-  { key: 'wordchain', name: '끝말잇기', desc: '30초 턴 타이머가 만드는 한 글자 승부' },
+  { key: 'wordchain', name: '끝말잇기', desc: '120초 도화선 폭탄 돌리기 — 마지막에 든 사람이 패배' },
   { key: 'omok', name: '오목', desc: '흑과 백, 차분한 두뇌 싸움 한 판' },
   { key: 'tictactoe', name: '틱택토', desc: '규칙 설명이 필요 없는 가장 빠른 대전' },
   { key: 'balance', name: '밸런스게임', desc: 'A냐 B냐 — 고르는 순간 취향이 보여요' },
