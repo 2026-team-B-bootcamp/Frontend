@@ -24,8 +24,34 @@ export const FLOAT_PILLS = [
 
 /** 통계 카드 4개 — delay는 렌더링 시점에 0.08 * i로 계산한다 */
 export const STATS = [
+  { to: 6, suffix: '종', label: '채팅 옆에서 바로 하는 미니게임' },
   { to: 1, suffix: '분', label: '서버 만들고 초대까지' },
-  { to: 3, suffix: '개', label: '나를 보여주는 관심사 태그' },
   { to: 30, suffix: '초', label: '끝말잇기 턴 제한 — 긴장감 유지' },
   { to: 100, suffix: '%', label: '실시간 — 새로고침 없는 대화' },
+]
+
+/** 게임 그리드 6종 — 키는 games/gameKinds.ts·백엔드 카탈로그와 1:1 */
+export const GAME_CARDS = [
+  { key: 'bingo', name: '빙고', desc: '한 판에서 같이 번호를 지워가는 클래식' },
+  { key: 'wordchain', name: '끝말잇기', desc: '30초 턴 타이머가 만드는 한 글자 승부' },
+  { key: 'omok', name: '오목', desc: '흑과 백, 차분한 두뇌 싸움 한 판' },
+  { key: 'tictactoe', name: '틱택토', desc: '규칙 설명이 필요 없는 가장 빠른 대전' },
+  { key: 'balance', name: '밸런스게임', desc: 'A냐 B냐 — 고르는 순간 취향이 보여요' },
+  { key: 'chosung', name: '초성퀴즈', desc: '초성만 보고 맞히는 스피드 퀴즈' },
+] as const
+
+/** 슬랙 섹션 불릿 — Backend/app/slack (features.py·handlers·mirror.py) 기준 */
+export const SLACK_POINTS = [
+  {
+    title: '채널에서 바로 시작',
+    desc: '"빙고 하자"라고 치면 봇이 게임 버튼을 띄워요. 게임 6종과 같이보기·그림판 전부.',
+  },
+  {
+    title: '본인 확인은 링크 하나로',
+    desc: '버튼을 누르면 나만 볼 수 있는 입장 링크가 와요. 로그인 없이 15분 안에 바로 입장.',
+  },
+  {
+    title: '슬랙과 웹이 같은 판',
+    desc: '슬랙에서 들어온 사람과 웹에서 하던 사람이 같은 보드에서 만나요. 태그 등록과 AI 말걸기는 슬랙 안에서 끝나고요.',
+  },
 ]

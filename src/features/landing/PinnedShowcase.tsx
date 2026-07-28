@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'motion/react'
-import { DiceIcon, SparkIcon, UsersIcon } from '../../shared/ui/icons'
+import { DiceIcon, SparkIcon, TvIcon, UsersIcon } from '../../shared/ui/icons'
 import { MockAI } from './mocks/MockAI'
 import { MockChat } from './mocks/MockChat'
 import { MockGames } from './mocks/MockGames'
+import { MockPlay } from './mocks/MockPlay'
 
 /* ---------- 핀(고정) 쇼케이스 ---------- */
 
@@ -24,8 +25,14 @@ const SHOWCASE = [
   {
     icon: <DiceIcon size={20} />,
     title: '게임 한 판이면 친구',
-    desc: '채팅 옆 패널에서 빙고와 끝말잇기를 바로. 30초 턴 타이머, 실시간 대전, 승리 폭죽까지 — 노는 사이에 가까워져요.',
+    desc: '빙고·끝말잇기·오목·틱택토·밸런스게임·초성퀴즈 — 6종을 채팅 옆 패널에서 바로. 30초 턴 타이머, 실시간 대전, 승리 폭죽까지.',
     mock: <MockGames />,
+  },
+  {
+    icon: <TvIcon size={20} />,
+    title: '보는 것도, 그리는 것도 같이',
+    desc: '같이보기로 유튜브를 한 화면처럼 — 재생·일시정지가 모두에게 동기화돼요. 그림판에선 내가 그은 선이 채널 전체에 실시간으로 나타나고요.',
+    mock: <MockPlay />,
   },
 ]
 
