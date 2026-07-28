@@ -9,6 +9,8 @@ import { fireWinConfetti } from '../../shared/lib/confetti'
 import { Counter } from './Counter'
 import { RevealWords } from './RevealWords'
 import { PinnedShowcase } from './PinnedShowcase'
+import { GamesGrid } from './GamesGrid'
+import { SlackSection } from './SlackSection'
 import { MockChat } from './mocks/MockChat'
 import { FLOAT_PILLS, MARQUEE_TAGS, STATS, STEPS } from './content'
 
@@ -107,7 +109,9 @@ export function LandingPage() {
           >
             새 모임의 어색한 침묵을 깨는 가장 쉬운 방법.
             <br />
-            관심사 태그, AI 첫 질문, 미니게임이 있는 모임 공간 — Deverapo.
+            관심사 태그, AI 첫 질문, 미니게임 6종, 같이보기와 그림판 —
+            <br />
+            슬랙에서도 이어지는 모임 공간, Deverapo.
           </motion.p>
           <motion.div
             className="landing-cta"
@@ -184,6 +188,12 @@ export function LandingPage() {
       {/* ---------- 핀 쇼케이스 (스크롤 고정) ---------- */}
       <PinnedShowcase />
 
+      {/* ---------- 미니게임 6종 그리드 ---------- */}
+      <GamesGrid />
+
+      {/* ---------- 슬랙 봇 ---------- */}
+      <SlackSection />
+
       {/* ---------- 숫자 카운터 ---------- */}
       <section className="landing-section">
         <div className="landing-stats">
@@ -212,7 +222,7 @@ export function LandingPage() {
           {'어색함 없이 · 빠르게 · 함께 · '.repeat(3)}
         </motion.div>
         <motion.div className="bigtype-line accent" style={{ x: bigX2 }}>
-          {'태그로 잇다 · 질문으로 잇다 · 게임으로 잇다 · '.repeat(3)}
+          {'태그로 잇다 · 질문으로 잇다 · 게임으로 잇다 · 슬랙으로 잇다 · '.repeat(2)}
         </motion.div>
       </section>
 

@@ -47,7 +47,10 @@
   min-height: 100svh;
   display: flex;
   flex-direction: column;
+  /* hidden은 이 요소를 스크롤 컨테이너로 만들어 내부 position: sticky(핀 쇼케이스)를
+     죽인다. clip은 같은 가로 클리핑을 하면서 스크롤 컨테이너를 만들지 않는다. */
   overflow-x: hidden;
+  overflow-x: clip;
   background: var(--bg);
   color: var(--lp-sub-ink);
   font-size: 1.06rem;
@@ -481,7 +484,7 @@
 /* ---------- 핀 쇼케이스 (스카이 곡면 블록) ---------- */
 
 .showcase {
-  height: 320vh;
+  height: 430vh; /* 아이템 4개 × 약 105vh */
   position: relative;
   background: var(--lp-sky);
   border-radius: 44% 56% 42% 58% / 96px 70px 56px 80px;
@@ -562,6 +565,10 @@
 
 .showcase-item.active:nth-child(3) .showcase-item-icon {
   outline: 2px solid rgba(25, 26, 35, 0.12);
+}
+
+.showcase-item:nth-child(4) .showcase-item-icon {
+  background: var(--lp-coral);
 }
 
 .showcase-item-title {
@@ -816,6 +823,252 @@
   border-top: 1px solid rgba(25, 26, 35, 0.16);
   font-size: 13px;
   color: rgba(25, 26, 35, 0.66);
+}
+
+/* ---------- 같이보기·그림판 목업 ---------- */
+
+.lm-player {
+  position: relative;
+  border-radius: 14px;
+  background: var(--lp-ink); /* 차콜 = 팔레트의 잉크색. 플레이어 화면 표현 */
+  aspect-ratio: 16 / 7;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.lm-player-play {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--on-solid);
+}
+
+.lm-player-play::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 11px;
+  border-left: 11px solid var(--lp-ink);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+}
+
+.lm-player-bar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.lm-player-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--lp-coral);
+}
+
+.lm-player-caption {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: 8px 0 14px;
+}
+
+.lm-board {
+  display: block;
+  width: 100%;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+/* ---------- 미니게임 6종 그리드 ---------- */
+
+.landing-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.game-card {
+  padding: 26px 18px 22px;
+  border-radius: 24px;
+  background: var(--bg);
+  box-shadow: var(--lp-shadow);
+  text-align: center;
+  transition: box-shadow 260ms var(--lp-ease);
+}
+
+.game-card:hover {
+  box-shadow: var(--lp-shadow-deep);
+}
+
+.game-card-art {
+  display: inline-grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: rgba(199, 232, 107, 0.32);
+  margin-bottom: 12px;
+}
+
+.game-card:nth-child(3n + 2) .game-card-art {
+  background: rgba(255, 139, 106, 0.22);
+}
+
+.game-card:nth-child(3n) .game-card-art {
+  background: rgba(143, 201, 240, 0.28);
+}
+
+.game-card .game-preview-svg {
+  width: 44px;
+  height: 44px;
+}
+
+.game-card-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--lp-ink);
+}
+
+.game-card-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--lp-sub-ink);
+  margin-top: 4px;
+}
+
+/* ---------- 슬랙 봇 섹션 ---------- */
+
+.landing-slack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  text-align: left;
+}
+
+.landing-slack-copy h2 {
+  margin-bottom: 26px;
+}
+
+.landing-slack-points {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.landing-slack-point {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--surface-2);
+}
+
+.landing-slack-point-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--lp-ink);
+}
+
+.landing-slack-point-desc {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--lp-sub-ink);
+  margin-top: 3px;
+}
+
+.landing-slack-mock {
+  padding: 22px 24px;
+}
+
+@media (max-width: 860px) {
+  .landing-slack {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+/* ---------- 슬랙 메시지 목업 ---------- */
+
+.lm-slack-msg {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.lm-slack-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--lp-sky);
+  color: var(--lp-ink);
+  display: grid;
+  place-items: center;
+  font-family: var(--lp-display);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.lm-slack-body {
+  min-width: 0;
+}
+
+.lm-slack-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--lp-ink);
+}
+
+.lm-slack-app {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text-faint);
+}
+
+.lm-slack-time {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.lm-slack-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lp-ink);
+  margin: 10px 0 6px;
+}
+
+.lm-slack-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* 슬랙의 각진 버튼 모양을 흉내낸다 — 랜딩 알약과 구분되는 게 오히려 '슬랙 화면'임을 말해준다 */
+.lm-slack-btn {
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border-bright);
+  color: var(--lp-ink);
+}
+
+.lm-slack-note {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 12px;
 }
 
 /* ---------- 모션 감소 설정 ---------- */

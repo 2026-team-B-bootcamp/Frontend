@@ -7,7 +7,7 @@ export function MockGames() {
   return (
     <div className="lm-screen">
       <div className="lm-screen-head">
-        <DiceIcon size={14} /> 빙고 · <ChainIcon size={14} /> 끝말잇기
+        <DiceIcon size={14} /> 빙고 · <ChainIcon size={14} /> 끝말잇기 — 미니게임 6종 중 두 판
       </div>
       <div className="lm-bingo">
         {Array.from({ length: 25 }, (_, i) => (
